@@ -1,0 +1,7 @@
+name: Javascript library CI action
+author: Richard Ainger
+description: Runs configured lint and test scripts for a project .
+
+runs:
+  using: node12
+  main: dist/index.js

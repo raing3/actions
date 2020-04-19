@@ -1,0 +1,13 @@
+name: Javascript library publish action
+author: Richard Ainger
+description: Publishes a new releases of a JS library to GitHub/NPM.
+
+inputs:
+  github_token:
+    description: 'Token for interact with the GitHub API'
+  npm_token:
+    description: 'Token for publishing the package to NPM'
+
+runs:
+  using: node12
+  main: dist/index.js
