@@ -989,7 +989,7 @@ const core = __importStar(__webpack_require__(470));
 exports.test = (packageContent) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     if ((_a = packageContent === null || packageContent === void 0 ? void 0 : packageContent.scripts) === null || _a === void 0 ? void 0 : _a.test) {
-        yield exec.exec('run test --silent');
+        yield exec.exec('npm test --silent');
     }
     else {
         core.info('No test script specified, skipping.');
