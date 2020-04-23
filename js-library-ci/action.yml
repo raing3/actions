@@ -4,4 +4,4 @@ description: Runs configured lint and test scripts for a project .
 
 runs:
   using: node12
-  main: dist/index.js
+  main: packages/js-library-ci/dist/index.js

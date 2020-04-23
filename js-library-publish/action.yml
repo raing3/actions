@@ -10,4 +10,4 @@ inputs:
 
 runs:
   using: node12
-  main: dist/index.js
+  main: packages/js-library-publish/dist/index.js

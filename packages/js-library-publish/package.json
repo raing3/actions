@@ -1,0 +1,30 @@
+{
+  "name": "@raing3/js-library-publish-action",
+  "version": "0.1.0",
+  "description": "GitHub action for publishing a JS library to GitHub/NPM.",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc && ncc build",
+    "lint": "eslint --ext .ts ./src  --max-warnings=0",
+    "lint-fix": "eslint --ext .ts ./src  --max-warnings=0 --fix"
+  },
+  "author": "Richard Ainger",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^1.2.3",
+    "@actions/exec": "^1.0.3",
+    "@actions/github": "^2.1.1",
+    "strip-ansi": "^6.0.0"
+  },
+  "devDependencies": {
+    "@raing3/eslint-config": "^0.2.1",
+    "@types/node": "^13.13.0",
+    "@typescript-eslint/eslint-plugin": "^2.29.0",
+    "@typescript-eslint/parser": "^2.29.0",
+    "@zeit/ncc": "^0.22.1",
+    "eslint": "^6.8.0",
+    "jest": "^25.3.0",
+    "ts-jest": "^25.4.0",
+    "typescript": "^3.8.3"
+  }
+}
