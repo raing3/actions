@@ -13,7 +13,6 @@
     "url": "git+https://github.com/raing3/actions.git"
   },
   "devDependencies": {
-    "@raing3/eslint-config": "file:../eslint-config",
     "lerna": "^3.20.2"
   },
   "dependencies": {}
