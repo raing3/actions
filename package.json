@@ -4,7 +4,8 @@
   "scripts": {
     "build": "lerna exec --concurrency 4 -- npm run build --silent",
     "lint": "lerna exec --concurrency 4 --no-bail -- npm run lint --silent",
-    "lint-fix": "lerna exec --concurrency 4 --no-bail -- npm run lint-fix --silent"
+    "lint-fix": "lerna exec --concurrency 4 --no-bail -- npm run lint-fix --silent",
+    "postinstall": "lerna bootstrap --ci"
   },
   "author": "Richard Ainger",
   "license": "ISC",
