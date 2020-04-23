@@ -20,6 +20,7 @@ async function run(): Promise<void> {
         if (!await headHasTag(`v${packageContent.version}`)) {
             return false;
         }
+        
 
         // don't publish if version already published
         if (await isPublished(packageContent.version)) {
