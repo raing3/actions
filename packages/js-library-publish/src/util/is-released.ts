@@ -1,6 +1,7 @@
 import * as github from '@actions/github';
+import { Octokit } from '@octokit/rest';
 
-export const isReleased = async (client: github.GitHub, tag: string): Promise<boolean> => {
+export const isReleased = async (client: Octokit, tag: string): Promise<boolean> => {
     try {
         await client.repos.getReleaseByTag({
             owner: github.context.repo.owner,

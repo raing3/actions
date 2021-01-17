@@ -1,10 +1,11 @@
 import * as github from '@actions/github';
 import * as exec from '@actions/exec';
+import { Octokit } from '@octokit/rest';
 import fs from 'fs';
 import { isReleased } from '../util';
 import * as core from '@actions/core';
 
-export const createRelease = async (client: github.GitHub, version: string): Promise<void> => {
+export const createRelease = async (client: Octokit, version: string): Promise<void> => {
     const tag = `v${version}`;
     let output = '';
 

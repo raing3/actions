@@ -5,9 +5,11 @@ description: Publishes a new releases of a JS library to GitHub/NPM.
 inputs:
   github_token:
     description: 'Token for interact with the GitHub API'
+    required: true
   npm_token:
     description: 'Token for publishing the package to NPM'
+    required: true
 
 runs:
-  using: node12
-  main: packages/js-library-publish/dist/index.js
+  using: node14
+  main: ../packages/js-library-publish/dist/index.js

@@ -4,25 +4,27 @@
   "description": "GitHub action for running lint and test scripts for a project.",
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc && ncc build",
+    "build": "ncc build",
+    "build:watch": "ncc build -w",
     "lint": "eslint --ext .ts ./src  --max-warnings=0",
-    "lint-fix": "eslint --ext .ts ./src  --max-warnings=0 --fix"
+    "lint:fix": "eslint --ext .ts ./src  --max-warnings=0 --fix"
   },
   "author": "Richard Ainger",
   "license": "ISC",
   "dependencies": {
-    "@actions/core": "^1.2.3",
-    "@actions/exec": "^1.0.3"
+    "@actions/core": "^1.2.6",
+    "@actions/exec": "^1.0.4"
   },
   "devDependencies": {
     "@raing3/eslint-config": "^0.2.1",
-    "@types/node": "^13.13.0",
-    "@typescript-eslint/eslint-plugin": "^2.29.0",
-    "@typescript-eslint/parser": "^2.29.0",
-    "@zeit/ncc": "^0.22.1",
-    "eslint": "^6.8.0",
-    "jest": "^25.3.0",
-    "ts-jest": "^25.4.0",
-    "typescript": "^3.8.3"
+    "@types/jest": "^26.0.20",
+    "@types/node": "^14.14.21",
+    "@typescript-eslint/eslint-plugin": "^4.13.0",
+    "@typescript-eslint/parser": "^4.13.0",
+    "@vercel/ncc": "^0.27.0",
+    "eslint": "^7.18.0",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.1.3"
   }
 }

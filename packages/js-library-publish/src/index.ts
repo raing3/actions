@@ -42,7 +42,7 @@ async function run(): Promise<void> {
     // create github release
     if (config.githubToken) {
         await core.group('Create GitHub release', async () => {
-            const client = new github.GitHub(config.githubToken);
+            const client = github.getOctokit(config.githubToken);
 
             await createRelease(client, packageContent.version);
         });
