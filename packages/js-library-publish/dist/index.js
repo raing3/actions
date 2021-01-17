@@ -3043,345 +3043,6 @@ module.exports = safer
 
 /***/ }),
 
-/***/ 4822:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const exec = __importStar(__nccwpck_require__(1514));
-const github = __importStar(__nccwpck_require__(5438));
-const fs_1 = __importDefault(__nccwpck_require__(5747));
-const util_1 = __nccwpck_require__(5063);
-const task_1 = __nccwpck_require__(7574);
-const packageContent = JSON.parse(fs_1.default.readFileSync('./package.json').toString());
-const config = {
-    githubToken: core.getInput('github_token'),
-    npmToken: core.getInput('npm_token'),
-    action: core.getInput('action')
-};
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        process.env.CI = 'true'; // eslint-disable-line id-length
-        const isViableForRelease = yield core.group('Check if commit is viable for release', () => __awaiter(this, void 0, void 0, function* () {
-            // don't publish on failure or if commit hasn't been tagged
-            if (!(yield util_1.headHasTag(`v${packageContent.version}`))) {
-                return false;
-            }
-            // don't publish if version already published
-            if (yield util_1.isPublished(packageContent.version)) {
-                core.info(`Version ${packageContent.version} has already been published, not publishing.`);
-                return false;
-            }
-            return true;
-        }));
-        if (!isViableForRelease) {
-            return;
-        }
-        // install dependencies
-        yield core.group('Installing dependencies', () => __awaiter(this, void 0, void 0, function* () {
-            yield exec.exec('npm ci');
-        }));
-        // create github release
-        if (config.githubToken) {
-            yield core.group('Create GitHub release', () => __awaiter(this, void 0, void 0, function* () {
-                const client = new github.GitHub(config.githubToken);
-                yield task_1.createRelease(client, packageContent.version);
-            }));
-        }
-        // publish to npm
-        if (config.npmToken) {
-            yield core.group('Publish to NPM', () => __awaiter(this, void 0, void 0, function* () {
-                yield task_1.publish(config.npmToken);
-            }));
-        }
-    });
-}
-run().catch(error => {
-    core.setFailed(error === null || error === void 0 ? void 0 : error.message);
-});
-
-
-/***/ }),
-
-/***/ 1663:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const github = __importStar(__nccwpck_require__(5438));
-const exec = __importStar(__nccwpck_require__(1514));
-const fs_1 = __importDefault(__nccwpck_require__(5747));
-const util_1 = __nccwpck_require__(5063);
-const core = __importStar(__nccwpck_require__(2186));
-exports.createRelease = (client, version) => __awaiter(void 0, void 0, void 0, function* () {
-    const tag = `v${version}`;
-    let output = '';
-    if (yield util_1.isReleased(client, tag)) {
-        core.info(`GitHub release for version ${version} already exists, skipping creation.`);
-        return;
-    }
-    yield exec.exec('npm pack', [], {
-        listeners: {
-            stdout: (data) => {
-                output += data.toString();
-            }
-        }
-    });
-    const fileName = output.trim();
-    const release = yield client.repos.createRelease({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        tag_name: tag,
-        name: `Release ${tag}`
-    });
-    yield client.repos.uploadReleaseAsset({
-        url: release.data.upload_url,
-        name: fileName,
-        data: fs_1.default.readFileSync(fileName),
-        headers: {
-            'content-length': fs_1.default.statSync(fileName).size,
-            'content-type': 'application/x-gzip'
-        }
-    });
-});
-
-
-/***/ }),
-
-/***/ 7574:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-var create_release_1 = __nccwpck_require__(1663);
-exports.createRelease = create_release_1.createRelease;
-var publish_1 = __nccwpck_require__(7618);
-exports.publish = publish_1.publish;
-
-
-/***/ }),
-
-/***/ 7618:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const exec = __importStar(__nccwpck_require__(1514));
-exports.publish = (nodeAuthToken) => __awaiter(void 0, void 0, void 0, function* () {
-    // eslint-disable-next-line no-template-curly-in-string
-    yield exec.exec('npm config set //registry.npmjs.org/:_authToken ${NODE_AUTH_TOKEN}');
-    yield exec.exec('npm publish', [], {
-        env: Object.assign(Object.assign({}, process.env), { NODE_AUTH_TOKEN: nodeAuthToken })
-    });
-});
-
-
-/***/ }),
-
-/***/ 8306:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const strip_ansi_1 = __importDefault(__nccwpck_require__(5591));
-const core = __importStar(__nccwpck_require__(2186));
-const exec = __importStar(__nccwpck_require__(1514));
-exports.headHasTag = (tag) => __awaiter(void 0, void 0, void 0, function* () {
-    const versionTag = strip_ansi_1.default(tag);
-    let output = '';
-    // check if current commit is tagged with the same version in the package.json
-    yield exec.exec(`git tag -l "${versionTag}" --points-at HEAD`, [], {
-        listeners: {
-            stdout: (data) => {
-                output += data.toString();
-            }
-        }
-    });
-    const result = output.trim() === versionTag;
-    core.info(`Checking if head has git tag: ${tag}, result: ${result}`);
-    return result;
-});
-
-
-/***/ }),
-
-/***/ 5063:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-var head_has_tag_1 = __nccwpck_require__(8306);
-exports.headHasTag = head_has_tag_1.headHasTag;
-var is_published_1 = __nccwpck_require__(1197);
-exports.isPublished = is_published_1.isPublished;
-var is_released_1 = __nccwpck_require__(5315);
-exports.isReleased = is_released_1.isReleased;
-
-
-/***/ }),
-
-/***/ 1197:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const exec = __importStar(__nccwpck_require__(1514));
-const core = __importStar(__nccwpck_require__(2186));
-exports.isPublished = (version) => __awaiter(void 0, void 0, void 0, function* () {
-    let output = '';
-    // check if current commit is tagged with the same version in the package.json
-    yield exec.exec('npm show . versions --json', [], {
-        listeners: {
-            stdout: (data) => {
-                output += data.toString();
-            }
-        }
-    });
-    const result = output.indexOf(`"${version}"`) >= 0;
-    core.info(`Checking if version has already been published: ${version}, result: ${result}`);
-    return result;
-});
-
-
-/***/ }),
-
-/***/ 5315:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const github = __importStar(__nccwpck_require__(5438));
-exports.isReleased = (client, tag) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        yield client.repos.getReleaseByTag({
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-            tag: tag
-        });
-        return true;
-    }
-    catch (_a) {
-        return false;
-    }
-});
-
-
-/***/ }),
-
 /***/ 7351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -8005,7 +7666,7 @@ exports.request = request;
 
 /***/ }),
 
-/***/ 3612:
+/***/ 5063:
 /***/ ((module) => {
 
 "use strict";
@@ -9984,7 +9645,7 @@ function onceStrict (fn) {
 
 "use strict";
 
-const ansiRegex = __nccwpck_require__(3612);
+const ansiRegex = __nccwpck_require__(5063);
 
 module.exports = string => typeof string === 'string' ? string.replace(ansiRegex(), '') : string;
 
@@ -10337,6 +9998,429 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 6144:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
+const github = __importStar(__nccwpck_require__(5438));
+const fs_1 = __importDefault(__nccwpck_require__(5747));
+const util_1 = __nccwpck_require__(9604);
+const task_1 = __nccwpck_require__(2871);
+const packageContent = JSON.parse(fs_1.default.readFileSync('./package.json').toString());
+const config = {
+    githubToken: core.getInput('github_token'),
+    npmToken: core.getInput('npm_token'),
+    action: core.getInput('action')
+};
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        process.env.CI = 'true'; // eslint-disable-line id-length
+        const isViableForRelease = yield core.group('Check if commit is viable for release', () => __awaiter(this, void 0, void 0, function* () {
+            // don't publish on failure or if commit hasn't been tagged
+            if (!(yield util_1.headHasTag(`v${packageContent.version}`))) {
+                return false;
+            }
+            // don't publish if version already published
+            if (yield util_1.isPublished(packageContent.version)) {
+                core.info(`Version ${packageContent.version} has already been published, not publishing.`);
+                return false;
+            }
+            return true;
+        }));
+        if (!isViableForRelease) {
+            return;
+        }
+        // install dependencies
+        yield core.group('Installing dependencies', () => __awaiter(this, void 0, void 0, function* () {
+            yield exec.exec('npm ci');
+        }));
+        // create github release
+        if (config.githubToken) {
+            yield core.group('Create GitHub release', () => __awaiter(this, void 0, void 0, function* () {
+                const client = github.getOctokit(config.githubToken);
+                yield task_1.createRelease(client, packageContent.version);
+            }));
+        }
+        // publish to npm
+        if (config.npmToken) {
+            yield core.group('Publish to NPM', () => __awaiter(this, void 0, void 0, function* () {
+                yield task_1.publish(config.npmToken);
+            }));
+        }
+    });
+}
+run().catch(error => {
+    core.setFailed(error === null || error === void 0 ? void 0 : error.message);
+});
+
+
+/***/ }),
+
+/***/ 7852:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.createRelease = void 0;
+const github = __importStar(__nccwpck_require__(5438));
+const exec = __importStar(__nccwpck_require__(1514));
+const fs_1 = __importDefault(__nccwpck_require__(5747));
+const util_1 = __nccwpck_require__(9604);
+const core = __importStar(__nccwpck_require__(2186));
+const createRelease = (client, version) => __awaiter(void 0, void 0, void 0, function* () {
+    const tag = `v${version}`;
+    let output = '';
+    if (yield util_1.isReleased(client, tag)) {
+        core.info(`GitHub release for version ${version} already exists, skipping creation.`);
+        return;
+    }
+    yield exec.exec('npm pack', [], {
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            }
+        }
+    });
+    const fileName = output.trim();
+    const release = yield client.repos.createRelease({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        tag_name: tag,
+        name: `Release ${tag}`
+    });
+    yield client.repos.uploadReleaseAsset({
+        url: release.data.upload_url,
+        name: fileName,
+        data: fs_1.default.readFileSync(fileName),
+        headers: {
+            'content-length': fs_1.default.statSync(fileName).size,
+            'content-type': 'application/x-gzip'
+        }
+    });
+});
+exports.createRelease = createRelease;
+
+
+/***/ }),
+
+/***/ 2871:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.publish = exports.createRelease = void 0;
+var create_release_1 = __nccwpck_require__(7852);
+Object.defineProperty(exports, "createRelease", ({ enumerable: true, get: function () { return create_release_1.createRelease; } }));
+var publish_1 = __nccwpck_require__(4772);
+Object.defineProperty(exports, "publish", ({ enumerable: true, get: function () { return publish_1.publish; } }));
+
+
+/***/ }),
+
+/***/ 4772:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.publish = void 0;
+const exec = __importStar(__nccwpck_require__(1514));
+const publish = (nodeAuthToken) => __awaiter(void 0, void 0, void 0, function* () {
+    // eslint-disable-next-line no-template-curly-in-string
+    yield exec.exec('npm config set //registry.npmjs.org/:_authToken ${NODE_AUTH_TOKEN}');
+    yield exec.exec('npm publish', [], {
+        env: Object.assign(Object.assign({}, process.env), { NODE_AUTH_TOKEN: nodeAuthToken })
+    });
+});
+exports.publish = publish;
+
+
+/***/ }),
+
+/***/ 3419:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.headHasTag = void 0;
+const strip_ansi_1 = __importDefault(__nccwpck_require__(5591));
+const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
+const headHasTag = (tag) => __awaiter(void 0, void 0, void 0, function* () {
+    const versionTag = strip_ansi_1.default(tag);
+    let output = '';
+    // check if current commit is tagged with the same version in the package.json
+    yield exec.exec(`git tag -l "${versionTag}" --points-at HEAD`, [], {
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            }
+        }
+    });
+    const result = output.trim() === versionTag;
+    core.info(`Checking if head has git tag: ${tag}, result: ${result}`);
+    return result;
+});
+exports.headHasTag = headHasTag;
+
+
+/***/ }),
+
+/***/ 9604:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isReleased = exports.isPublished = exports.headHasTag = void 0;
+var head_has_tag_1 = __nccwpck_require__(3419);
+Object.defineProperty(exports, "headHasTag", ({ enumerable: true, get: function () { return head_has_tag_1.headHasTag; } }));
+var is_published_1 = __nccwpck_require__(997);
+Object.defineProperty(exports, "isPublished", ({ enumerable: true, get: function () { return is_published_1.isPublished; } }));
+var is_released_1 = __nccwpck_require__(3765);
+Object.defineProperty(exports, "isReleased", ({ enumerable: true, get: function () { return is_released_1.isReleased; } }));
+
+
+/***/ }),
+
+/***/ 997:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isPublished = void 0;
+const exec = __importStar(__nccwpck_require__(1514));
+const core = __importStar(__nccwpck_require__(2186));
+const isPublished = (version) => __awaiter(void 0, void 0, void 0, function* () {
+    let output = '';
+    // check if current commit is tagged with the same version in the package.json
+    yield exec.exec('npm show . versions --json', [], {
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            }
+        }
+    });
+    const result = output.indexOf(`"${version}"`) >= 0;
+    core.info(`Checking if version has already been published: ${version}, result: ${result}`);
+    return result;
+});
+exports.isPublished = isPublished;
+
+
+/***/ }),
+
+/***/ 3765:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isReleased = void 0;
+const github = __importStar(__nccwpck_require__(5438));
+const isReleased = (client, tag) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield client.repos.getReleaseByTag({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            tag: tag
+        });
+        return true;
+    }
+    catch (_a) {
+        return false;
+    }
+});
+exports.isReleased = isReleased;
+
+
+/***/ }),
+
 /***/ 133:
 /***/ ((module) => {
 
@@ -10511,6 +10595,6 @@ module.exports = require("zlib");;
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __nccwpck_require__(4822);
+/******/ 	return __nccwpck_require__(6144);
 /******/ })()
 ;

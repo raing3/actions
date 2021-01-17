@@ -3,203 +3,6 @@ module.exports =
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 822:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(186));
-const exec = __importStar(__nccwpck_require__(514));
-const fs_1 = __importDefault(__nccwpck_require__(747));
-const task_1 = __nccwpck_require__(574);
-const packageContent = JSON.parse(fs_1.default.readFileSync('./package.json').toString());
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        process.env.CI = 'true'; // eslint-disable-line id-length
-        // install dependencies
-        yield core.group('Installing dependencies', () => __awaiter(this, void 0, void 0, function* () {
-            yield exec.exec('npm ci');
-        }));
-        // lint
-        yield core.group('Lint', () => __awaiter(this, void 0, void 0, function* () {
-            try {
-                yield task_1.lint(packageContent);
-            }
-            catch (error) {
-                core.setFailed('Lint failed');
-            }
-        }));
-        // test
-        yield core.group('Test', () => __awaiter(this, void 0, void 0, function* () {
-            try {
-                yield task_1.test(packageContent);
-            }
-            catch (error) {
-                core.setFailed('Tests failed');
-            }
-        }));
-    });
-}
-run().catch(error => {
-    core.setFailed(error === null || error === void 0 ? void 0 : error.message);
-});
-
-
-/***/ }),
-
-/***/ 574:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.test = exports.lint = void 0;
-var lint_1 = __nccwpck_require__(103);
-Object.defineProperty(exports, "lint", ({ enumerable: true, get: function () { return lint_1.lint; } }));
-var test_1 = __nccwpck_require__(733);
-Object.defineProperty(exports, "test", ({ enumerable: true, get: function () { return test_1.test; } }));
-
-
-/***/ }),
-
-/***/ 103:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.lint = void 0;
-const exec = __importStar(__nccwpck_require__(514));
-const core = __importStar(__nccwpck_require__(186));
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-const lint = (packageContent) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    if ((_a = packageContent === null || packageContent === void 0 ? void 0 : packageContent.scripts) === null || _a === void 0 ? void 0 : _a.lint) {
-        try {
-            yield exec.exec('npm run lint --silent');
-        }
-        catch (error) {
-            core.setFailed('Lint failed');
-            throw error;
-        }
-    }
-    else {
-        core.info('No lint script specified, skipping.');
-    }
-});
-exports.lint = lint;
-
-
-/***/ }),
-
-/***/ 733:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.test = void 0;
-const exec = __importStar(__nccwpck_require__(514));
-const core = __importStar(__nccwpck_require__(186));
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-const test = (packageContent) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    if ((_a = packageContent === null || packageContent === void 0 ? void 0 : packageContent.scripts) === null || _a === void 0 ? void 0 : _a.test) {
-        yield exec.exec('npm test --silent');
-    }
-    else {
-        core.info('No test script specified, skipping.');
-    }
-});
-exports.test = test;
-
-
-/***/ }),
-
 /***/ 351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -1742,6 +1545,203 @@ function copyFile(srcFile, destFile, force) {
 
 /***/ }),
 
+/***/ 144:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(186));
+const exec = __importStar(__nccwpck_require__(514));
+const fs_1 = __importDefault(__nccwpck_require__(747));
+const task_1 = __nccwpck_require__(871);
+const packageContent = JSON.parse(fs_1.default.readFileSync('./package.json').toString());
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        process.env.CI = 'true'; // eslint-disable-line id-length
+        // install dependencies
+        yield core.group('Installing dependencies', () => __awaiter(this, void 0, void 0, function* () {
+            yield exec.exec('npm ci');
+        }));
+        // lint
+        yield core.group('Lint', () => __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield task_1.lint(packageContent);
+            }
+            catch (error) {
+                core.setFailed('Lint failed');
+            }
+        }));
+        // test
+        yield core.group('Test', () => __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield task_1.test(packageContent);
+            }
+            catch (error) {
+                core.setFailed('Tests failed');
+            }
+        }));
+    });
+}
+run().catch(error => {
+    core.setFailed(error === null || error === void 0 ? void 0 : error.message);
+});
+
+
+/***/ }),
+
+/***/ 871:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.test = exports.lint = void 0;
+var lint_1 = __nccwpck_require__(137);
+Object.defineProperty(exports, "lint", ({ enumerable: true, get: function () { return lint_1.lint; } }));
+var test_1 = __nccwpck_require__(231);
+Object.defineProperty(exports, "test", ({ enumerable: true, get: function () { return test_1.test; } }));
+
+
+/***/ }),
+
+/***/ 137:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.lint = void 0;
+const exec = __importStar(__nccwpck_require__(514));
+const core = __importStar(__nccwpck_require__(186));
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+const lint = (packageContent) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    if ((_a = packageContent === null || packageContent === void 0 ? void 0 : packageContent.scripts) === null || _a === void 0 ? void 0 : _a.lint) {
+        try {
+            yield exec.exec('npm run lint --silent');
+        }
+        catch (error) {
+            core.setFailed('Lint failed');
+            throw error;
+        }
+    }
+    else {
+        core.info('No lint script specified, skipping.');
+    }
+});
+exports.lint = lint;
+
+
+/***/ }),
+
+/***/ 231:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.test = void 0;
+const exec = __importStar(__nccwpck_require__(514));
+const core = __importStar(__nccwpck_require__(186));
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+const test = (packageContent) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    if ((_a = packageContent === null || packageContent === void 0 ? void 0 : packageContent.scripts) === null || _a === void 0 ? void 0 : _a.test) {
+        yield exec.exec('npm test --silent');
+    }
+    else {
+        core.info('No test script specified, skipping.');
+    }
+});
+exports.test = test;
+
+
+/***/ }),
+
 /***/ 357:
 /***/ ((module) => {
 
@@ -1829,6 +1829,6 @@ module.exports = require("util");;
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __nccwpck_require__(822);
+/******/ 	return __nccwpck_require__(144);
 /******/ })()
 ;

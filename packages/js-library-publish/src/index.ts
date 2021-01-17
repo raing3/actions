@@ -4,6 +4,7 @@ import * as github from '@actions/github';
 import fs from 'fs';
 import { headHasTag, isPublished } from './util';
 import { createRelease, publish } from './task';
+import { Octokit } from '@octokit/rest';
 
 const packageContent = JSON.parse(fs.readFileSync('./package.json').toString());
 const config = {
@@ -44,7 +45,7 @@ async function run(): Promise<void> {
         await core.group('Create GitHub release', async () => {
             const client = github.getOctokit(config.githubToken);
 
-            await createRelease(client, packageContent.version);
+            await createRelease(client as any as Octokit, packageContent.version);
         });
     }
 

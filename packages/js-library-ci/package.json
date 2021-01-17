@@ -4,8 +4,8 @@
   "description": "GitHub action for running lint and test scripts for a project.",
   "main": "lib/index.js",
   "scripts": {
-    "build": "ncc build",
-    "build:watch": "ncc build -w",
+    "build": "ncc build src/index.ts",
+    "build:watch": "ncc build src/index.ts -w",
     "lint": "eslint --ext .ts ./src  --max-warnings=0",
     "lint:fix": "eslint --ext .ts ./src  --max-warnings=0 --fix"
   },
