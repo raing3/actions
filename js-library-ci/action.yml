@@ -3,5 +3,5 @@ author: Richard Ainger
 description: Runs configured lint and test scripts for a project .
 
 runs:
-  using: node14
+  using: node12
   main: ../packages/js-library-ci/dist/index.js
