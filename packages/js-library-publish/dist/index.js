@@ -12854,14 +12854,13 @@ function run() {
             core.warning('GitHub token not provided, not creating GitHub release page.');
         }
         // publish to npm
-        if (config.npmToken) {
-            yield core.group('Publish to NPM', () => __awaiter(this, void 0, void 0, function* () {
-                yield (0, task_1.publish)(config.npmToken);
-            }));
-        }
-        else {
-            core.warning('NPM token not provided, not publishing to npmjs.com.');
-        }
+        // if (config.npmToken) {
+        //     await core.group('Publish to NPM', async () => {
+        //         await publish(config.npmToken);
+        //     });
+        // } else {
+        //     core.warning('NPM token not provided, not publishing to npmjs.com.');
+        // }
     });
 }
 run().catch(error => {
@@ -12904,44 +12903,42 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.createRelease = void 0;
-const core = __importStar(__nccwpck_require__(2186));
-const exec = __importStar(__nccwpck_require__(1514));
 const github = __importStar(__nccwpck_require__(5438));
-const fs_1 = __importDefault(__nccwpck_require__(5747));
-const util_1 = __nccwpck_require__(9604);
 const createRelease = (client, version) => __awaiter(void 0, void 0, void 0, function* () {
     const tag = `v${version}`;
-    let output = '';
-    if (yield (0, util_1.isReleased)(client, tag)) {
-        core.info(`GitHub release for version ${version} already exists, skipping creation.`);
-        return;
-    }
-    yield exec.exec('npm pack', [], {
-        listeners: {
-            stdout: (data) => {
-                output += data.toString();
-            }
-        }
-    });
-    const fileName = output.trim();
+    // let output = '';
+    //
+    // if (await isReleased(client, tag)) {
+    //     core.info(`GitHub release for version ${version} already exists, skipping creation.`);
+    //     return;
+    // }
+    //
+    // await exec.exec('npm pack', [], {
+    //     listeners: {
+    //         stdout: (data: Buffer): void => {
+    //             output += data.toString();
+    //         }
+    //     }
+    // });
+    //
+    // const fileName = output.trim();
+    console.log(client);
+    console.log(client.repos);
     const release = yield client.repos.createRelease({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         tag_name: tag,
         name: `Release ${tag}`
     });
-    yield client.repos.uploadReleaseAsset({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        release_id: release.data.id,
-        name: fileName,
-        data: fs_1.default.readFileSync(fileName).toString('utf8')
-    });
+    // await client.repos.uploadReleaseAsset({
+    //     owner: github.context.repo.owner,
+    //     repo: github.context.repo.repo,
+    //     release_id: release.data.id, // eslint-disable-line @typescript-eslint/naming-convention
+    //     name: fileName,
+    //     data: fs.readFileSync(fileName).toString('utf8')
+    // });
 });
 exports.createRelease = createRelease;
 
@@ -13122,16 +13119,21 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.isPublished = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
+const fs_1 = __importDefault(__nccwpck_require__(5747));
 const isPublished = (version) => __awaiter(void 0, void 0, void 0, function* () {
     let output = '';
     let errorOutput = '';
     try {
         // check if current commit is tagged with the same version in the package.json
         yield exec.exec('npm show . versions --json', [], {
+            errStream: fs_1.default.createWriteStream('/dev/null'),
             listeners: {
                 stdout: (data) => {
                     output += data.toString();
