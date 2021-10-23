@@ -4,7 +4,7 @@ import { build, lint, test } from './task';
 import fs from 'fs';
 
 const packageContent = JSON.parse(fs.readFileSync('./package.json').toString());
-const isLernaRepository = packageContent.dependencies.lerna || packageContent.devDependencies.lerna;
+const isLernaRepository = fs.existsSync('./lerna.json');
 
 async function run(): Promise<void> {
     process.env.CI = 'true'; // eslint-disable-line id-length

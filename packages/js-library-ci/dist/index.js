@@ -2864,6 +2864,7 @@ const exec = __importStar(__nccwpck_require__(514));
 const task_1 = __nccwpck_require__(871);
 const fs_1 = __importDefault(__nccwpck_require__(747));
 const packageContent = JSON.parse(fs_1.default.readFileSync('./package.json').toString());
+const isLernaRepository = fs_1.default.existsSync('./lerna.json');
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         process.env.CI = 'true'; // eslint-disable-line id-length
@@ -2871,6 +2872,15 @@ function run() {
         yield core.group('Installing dependencies', () => __awaiter(this, void 0, void 0, function* () {
             yield exec.exec('npm ci');
         }));
+        // build packages if lerna.json exists
+        // packages may have dependencies on one another and cause lint/test issues if dependencies aren't built first
+        if (isLernaRepository) {
+            yield core.group('Build dependencies', () => __awaiter(this, void 0, void 0, function* () {
+                core.info('Lerna configuration found, configuring and building packages.');
+                yield exec.exec('node_modules/.bin/lerna bootstrap --ci');
+                yield (0, task_1.build)(packageContent);
+            }));
+        }
         // lint
         yield core.group('Lint', () => __awaiter(this, void 0, void 0, function* () {
             try {
@@ -2898,17 +2908,82 @@ run().catch(error => {
 
 /***/ }),
 
-/***/ 871:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ 394:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.test = exports.lint = void 0;
-var lint_1 = __nccwpck_require__(137);
-Object.defineProperty(exports, "lint", ({ enumerable: true, get: function () { return lint_1.lint; } }));
-var test_1 = __nccwpck_require__(231);
-Object.defineProperty(exports, "test", ({ enumerable: true, get: function () { return test_1.test; } }));
+exports.build = void 0;
+const core = __importStar(__nccwpck_require__(186));
+const exec = __importStar(__nccwpck_require__(514));
+const build = (packageContent) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    if ((_a = packageContent === null || packageContent === void 0 ? void 0 : packageContent.scripts) === null || _a === void 0 ? void 0 : _a.build) {
+        try {
+            yield exec.exec('npm run build --silent');
+        }
+        catch (error) {
+            core.setFailed('Build failed');
+            throw error;
+        }
+    }
+    else {
+        core.info('No build script specified, skipping.');
+    }
+});
+exports.build = build;
+
+
+/***/ }),
+
+/***/ 871:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(394), exports);
+__exportStar(__nccwpck_require__(137), exports);
+__exportStar(__nccwpck_require__(231), exports);
 
 
 /***/ }),
