@@ -13177,14 +13177,14 @@ const getPackagesToPublish = (packages) => __awaiter(void 0, void 0, void 0, fun
         }
     }));
     yield Promise.all(promises);
-    if (publishedPackages.length > 0) {
-        core.info(`${publishedPackages.map(item => item.name).join(', ')} has already been published.`);
-    }
     if (unpublishablePackages.length > 0) {
         core.info(`${unpublishablePackages.map(item => item.name).join(', ')} is private and will not be published.`);
     }
+    if (publishedPackages.length > 0) {
+        core.info(`${publishedPackages.map(item => item.name).join(', ')} has already been published.`);
+    }
     if (nonPublishedPackaged.length > 0) {
-        core.info(`${nonPublishedPackaged.join(', ')} has not been published yet.`);
+        core.info(`${nonPublishedPackaged.map(item => item.name).join(', ')} has not been published yet.`);
     }
     return nonPublishedPackaged;
 });
