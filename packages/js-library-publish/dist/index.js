@@ -13165,6 +13165,7 @@ const getPackageVersions = (packageContent, isLernaRepository) => __awaiter(void
         let output = '';
         // check if current commit is tagged with the same version in the package.json
         yield exec.exec('lerna ls --json', [], {
+            silent: true,
             listeners: {
                 stdout: (data) => {
                     output += data.toString();

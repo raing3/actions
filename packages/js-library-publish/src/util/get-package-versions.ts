@@ -17,6 +17,7 @@ export const getPackageVersions = async (packageContent: any, isLernaRepository:
 
         // check if current commit is tagged with the same version in the package.json
         await exec.exec('lerna ls --json', [], {
+            silent: true,
             listeners: {
                 stdout: (data: Buffer): void => {
                     output += data.toString();
