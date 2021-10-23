@@ -1,3 +1,4 @@
-export { headHasTag } from './head-has-tag';
-export { isPublished } from './is-published';
-export { isReleased } from './is-released';
+export * from './get-package-versions';
+export * from './head-has-version-tag';
+export * from './is-published';
+export * from './is-released';

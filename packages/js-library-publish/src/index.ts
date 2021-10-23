@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 import { createRelease, publish } from './task';
-import { headHasTag, isPublished } from './util';
+import { getPackageVersions, headHasVersionTag, isPublished } from './util';
 import fs from 'fs';
 import { Octokit } from '@octokit/rest';
 
@@ -19,7 +19,7 @@ async function run(): Promise<void> {
 
     const isViableForRelease = await core.group('Check if commit is viable for release', async () => {
         // don't publish on failure or if commit hasn't been tagged
-        if (!await headHasTag(`v${packageContent.version}`)) {
+        if (!await headHasVersionTag(await getPackageVersions(packageContent, isLernaRepository))) {
             return false;
         }
 
@@ -34,7 +34,7 @@ async function run(): Promise<void> {
 
     if (!isViableForRelease) {
         core.info(
-            `To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major>` +
+            `To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
             'and push the tag.'
         );
         return;
@@ -59,7 +59,7 @@ async function run(): Promise<void> {
     // publish to npm
     if (config.npmToken) {
         await core.group('Publish to NPM', async () => {
-            await publish(config.npmToken, Boolean(packageContent.private));
+            await publish(config.npmToken, Boolean(packageContent.private), isLernaRepository);
         });
     } else {
         core.warning('NPM token not provided, not publishing to npmjs.com.');

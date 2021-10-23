@@ -12390,42 +12390,6 @@ function onceStrict (fn) {
 
 /***/ }),
 
-/***/ 8926:
-/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __nccwpck_require__) => {
-
-"use strict";
-// ESM COMPAT FLAG
-__nccwpck_require__.r(__webpack_exports__);
-
-// EXPORTS
-__nccwpck_require__.d(__webpack_exports__, {
-  "default": () => (/* binding */ stripAnsi)
-});
-
-;// CONCATENATED MODULE: ./node_modules/strip-ansi/node_modules/ansi-regex/index.js
-function ansiRegex({onlyFirst = false} = {}) {
-	const pattern = [
-	    '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
-		'(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'
-	].join('|');
-
-	return new RegExp(pattern, onlyFirst ? undefined : 'g');
-}
-
-;// CONCATENATED MODULE: ./node_modules/strip-ansi/index.js
-
-
-function stripAnsi(string) {
-	if (typeof string !== 'string') {
-		throw new TypeError(`Expected a \`string\`, got \`${typeof string}\``);
-	}
-
-	return string.replace(ansiRegex(), '');
-}
-
-
-/***/ }),
-
 /***/ 4294:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -12827,7 +12791,7 @@ function run() {
         process.env.CI = 'true'; // eslint-disable-line id-length
         const isViableForRelease = yield core.group('Check if commit is viable for release', () => __awaiter(this, void 0, void 0, function* () {
             // don't publish on failure or if commit hasn't been tagged
-            if (!(yield (0, util_1.headHasTag)(`v${packageContent.version}`))) {
+            if (!(yield (0, util_1.headHasVersionTag)(yield (0, util_1.getPackageVersions)(packageContent, isLernaRepository)))) {
                 return false;
             }
             // don't publish if version already published
@@ -12838,7 +12802,7 @@ function run() {
             return true;
         }));
         if (!isViableForRelease) {
-            core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major>` +
+            core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
                 'and push the tag.');
             return;
         }
@@ -12859,7 +12823,7 @@ function run() {
         // publish to npm
         if (config.npmToken) {
             yield core.group('Publish to NPM', () => __awaiter(this, void 0, void 0, function* () {
-                yield (0, task_1.publish)(config.npmToken, Boolean(packageContent.private));
+                yield (0, task_1.publish)(config.npmToken, Boolean(packageContent.private), isLernaRepository);
             }));
         }
         else {
@@ -12953,16 +12917,23 @@ exports.createRelease = createRelease;
 /***/ }),
 
 /***/ 2871:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.publish = exports.createRelease = void 0;
-var create_release_1 = __nccwpck_require__(7852);
-Object.defineProperty(exports, "createRelease", ({ enumerable: true, get: function () { return create_release_1.createRelease; } }));
-var publish_1 = __nccwpck_require__(4772);
-Object.defineProperty(exports, "publish", ({ enumerable: true, get: function () { return publish_1.publish; } }));
+__exportStar(__nccwpck_require__(7852), exports);
+__exportStar(__nccwpck_require__(4772), exports);
 
 
 /***/ }),
@@ -13003,19 +12974,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.publish = void 0;
 const exec = __importStar(__nccwpck_require__(1514));
-const publish = (nodeAuthToken, isPrivate) => __awaiter(void 0, void 0, void 0, function* () {
+const publish = (nodeAuthToken, isPrivate, isLernaRepository) => __awaiter(void 0, void 0, void 0, function* () {
+    const options = {
+        env: Object.assign(Object.assign({}, process.env), { NODE_AUTH_TOKEN: nodeAuthToken })
+    };
     // eslint-disable-next-line no-template-curly-in-string
     yield exec.exec('npm config set //registry.npmjs.org/:_authToken ${NODE_AUTH_TOKEN}');
-    yield exec.exec('npm publish', isPrivate ? [] : ['--access=public'], {
-        env: Object.assign(Object.assign({}, process.env), { NODE_AUTH_TOKEN: nodeAuthToken })
-    });
+    if (isLernaRepository) {
+        yield exec.exec('lerna publish from-git', [], options);
+    }
+    else {
+        yield exec.exec('npm publish', isPrivate ? [] : ['--access=public'], options);
+    }
 });
 exports.publish = publish;
 
 
 /***/ }),
 
-/***/ 3419:
+/***/ 5854:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -13048,47 +13025,121 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getPackageVersions = void 0;
+const exec = __importStar(__nccwpck_require__(1514));
+const getPackageVersions = (packageContent, isLernaRepository) => __awaiter(void 0, void 0, void 0, function* () {
+    if (isLernaRepository) {
+        let output = '';
+        // check if current commit is tagged with the same version in the package.json
+        yield exec.exec('lerna ls --json', [], {
+            listeners: {
+                stdout: (data) => {
+                    output += data.toString();
+                }
+            }
+        });
+        const parsed = JSON.parse(output);
+        return [...new Set(parsed.map(item => `v${item.version}`))];
+    }
+    else if (packageContent === null || packageContent === void 0 ? void 0 : packageContent.version) {
+        return [`v${packageContent.version}`];
+    }
+    return [];
+});
+exports.getPackageVersions = getPackageVersions;
+
+
+/***/ }),
+
+/***/ 4275:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.headHasTag = void 0;
+exports.headHasVersionTag = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
-const strip_ansi_1 = __importDefault(__nccwpck_require__(8926));
-const headHasTag = (tag) => __awaiter(void 0, void 0, void 0, function* () {
-    const versionTag = (0, strip_ansi_1.default)(tag);
+const headHasVersionTag = (versions) => __awaiter(void 0, void 0, void 0, function* () {
+    if (versions.length === 0) {
+        core.warning('No version identified from packages.');
+        return false;
+    }
     let output = '';
     // check if current commit is tagged with the same version in the package.json
-    yield exec.exec(`git tag -l "${versionTag}" --points-at HEAD`, [], {
+    yield exec.exec('git tag -l --points-at HEAD', [], {
         listeners: {
             stdout: (data) => {
                 output += data.toString();
             }
         }
     });
-    const result = output.trim() === versionTag;
-    core.info(`Checking if head has git tag: ${tag}, result: ${result}`);
-    return result;
+    const tags = output.split('\n').map(item => item.trim());
+    const intersection = tags.filter(tag => versions.includes(tag));
+    core.info(`Head has the following tags: ${tags.join(', ')}`);
+    if (versions.length === 1) {
+        core.info(`Package version is: ${versions.join(', ')}`);
+    }
+    else {
+        core.info(`Package versions are: ${versions.join(', ')}`);
+    }
+    core.info(`Intersection: ${intersection.join(', ')}, result: ${intersection.length > 0}`);
+    return intersection.length > 0;
 });
-exports.headHasTag = headHasTag;
+exports.headHasVersionTag = headHasVersionTag;
 
 
 /***/ }),
 
 /***/ 9604:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isReleased = exports.isPublished = exports.headHasTag = void 0;
-var head_has_tag_1 = __nccwpck_require__(3419);
-Object.defineProperty(exports, "headHasTag", ({ enumerable: true, get: function () { return head_has_tag_1.headHasTag; } }));
-var is_published_1 = __nccwpck_require__(997);
-Object.defineProperty(exports, "isPublished", ({ enumerable: true, get: function () { return is_published_1.isPublished; } }));
-var is_released_1 = __nccwpck_require__(3765);
-Object.defineProperty(exports, "isReleased", ({ enumerable: true, get: function () { return is_released_1.isReleased; } }));
+__exportStar(__nccwpck_require__(5854), exports);
+__exportStar(__nccwpck_require__(4275), exports);
+__exportStar(__nccwpck_require__(997), exports);
+__exportStar(__nccwpck_require__(3765), exports);
 
 
 /***/ }),
@@ -13404,34 +13455,6 @@ module.exports = require("zlib");
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/define property getters */
-/******/ 	(() => {
-/******/ 		// define getter functions for harmony exports
-/******/ 		__nccwpck_require__.d = (exports, definition) => {
-/******/ 			for(var key in definition) {
-/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
-/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
-/******/ 	(() => {
-/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/make namespace object */
-/******/ 	(() => {
-/******/ 		// define __esModule on exports
-/******/ 		__nccwpck_require__.r = (exports) => {
-/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 			}
-/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 		};
-/******/ 	})();
-/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";

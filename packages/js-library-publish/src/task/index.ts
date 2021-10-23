@@ -1,2 +1,2 @@
-export { createRelease } from './create-release';
-export { publish } from './publish';
+export * from './create-release';
+export * from './publish';
