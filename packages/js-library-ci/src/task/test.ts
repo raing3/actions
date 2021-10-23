@@ -1,7 +1,6 @@
-import * as exec from '@actions/exec';
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const test = async (packageContent: any): Promise<void> => {
     if (packageContent?.scripts?.test) {
         await exec.exec('npm test --silent');

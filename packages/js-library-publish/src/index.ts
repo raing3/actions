@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
-import fs from 'fs';
-import { headHasTag, isPublished } from './util';
 import { createRelease, publish } from './task';
+import { headHasTag, isPublished } from './util';
+import fs from 'fs';
 import { Octokit } from '@octokit/rest';
 
 const packageContent = JSON.parse(fs.readFileSync('./package.json').toString());
@@ -47,6 +47,8 @@ async function run(): Promise<void> {
 
             await createRelease(client as any as Octokit, packageContent.version);
         });
+    } else {
+        core.warning('GitHub token not provided, not creating GitHub release page.');
     }
 
     // publish to npm
@@ -54,6 +56,8 @@ async function run(): Promise<void> {
         await core.group('Publish to NPM', async () => {
             await publish(config.npmToken);
         });
+    } else {
+        core.warning('NPM token not provided, not publishing to npmjs.com.');
     }
 }
 
