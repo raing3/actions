@@ -22,7 +22,9 @@ export const createRelease = async (client: Octokit, version: string): Promise<v
         }
     });
 
-    const fileName = output.trim();
+    output = output.trim();
+
+    const fileName = output.substr(output.lastIndexOf('\n') + 1);
 
     const release = await client.rest.repos.createRelease({
         owner: github.context.repo.owner,
@@ -36,6 +38,6 @@ export const createRelease = async (client: Octokit, version: string): Promise<v
         repo: github.context.repo.repo,
         release_id: release.data.id, // eslint-disable-line @typescript-eslint/naming-convention
         name: fileName,
-        data: fs.readFileSync(fileName).toString('utf8')
+        data: fs.readFileSync(fileName, 'utf8')
     });
 };

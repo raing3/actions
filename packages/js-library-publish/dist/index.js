@@ -12928,7 +12928,8 @@ const createRelease = (client, version) => __awaiter(void 0, void 0, void 0, fun
             }
         }
     });
-    const fileName = output.trim();
+    output = output.trim();
+    const fileName = output.substr(output.lastIndexOf('\n') + 1);
     const release = yield client.rest.repos.createRelease({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
@@ -12940,7 +12941,7 @@ const createRelease = (client, version) => __awaiter(void 0, void 0, void 0, fun
         repo: github.context.repo.repo,
         release_id: release.data.id,
         name: fileName,
-        data: fs_1.default.readFileSync(fileName).toString('utf8')
+        data: fs_1.default.readFileSync(fileName, 'utf8')
     });
 });
 exports.createRelease = createRelease;
