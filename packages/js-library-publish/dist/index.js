@@ -13165,6 +13165,7 @@ const getPackageVersions = (packageContent, isLernaRepository) => __awaiter(void
         let output = '';
         // check if current commit is tagged with the same version in the package.json
         yield exec.exec('lerna ls --json', [], {
+            silent: true,
             listeners: {
                 stdout: (data) => {
                     output += data.toString();
@@ -13176,8 +13177,9 @@ const getPackageVersions = (packageContent, isLernaRepository) => __awaiter(void
         parsed.forEach(item => {
             versions[item.name] = `v${item.version}`;
         });
+        return versions;
     }
-    else if ((packageContent === null || packageContent === void 0 ? void 0 : packageContent.name) && (packageContent === null || packageContent === void 0 ? void 0 : packageContent.version)) {
+    if ((packageContent === null || packageContent === void 0 ? void 0 : packageContent.name) && (packageContent === null || packageContent === void 0 ? void 0 : packageContent.version)) {
         return { [packageContent.name]: `v${packageContent.version}` };
     }
     return {};
