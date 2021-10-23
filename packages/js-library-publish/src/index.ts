@@ -5,10 +5,11 @@ import { createRelease, publish } from './task';
 import {
     getMaxVersion,
     getNonPublishedPackages,
-    getPackageVersions,
+    getPackages,
     getUniqueVersions,
     headHasVersionTag
 } from './util';
+import { createPackageTarball } from './util/create-package-tarball';
 import fs from 'fs';
 import { Octokit } from '@octokit/rest';
 
@@ -23,9 +24,9 @@ const config = {
 async function run(): Promise<void> {
     process.env.CI = 'true'; // eslint-disable-line id-length
 
-    const versions = await getPackageVersions(packageContent, isLernaRepository);
-    const maxVersion = getMaxVersion(Object.values(versions));
-    const uniqueVersions = getUniqueVersions(Object.values(versions));
+    const packages = await getPackages(packageContent, isLernaRepository);
+    const maxVersion = getMaxVersion(packages);
+    const uniqueVersions = getUniqueVersions(packages);
     const isViableForRelease = await core.group('Check if commit is viable for release', async () => {
         // don't publish on failure or if commit hasn't been tagged
         if (!await headHasVersionTag(uniqueVersions)) {
@@ -33,7 +34,7 @@ async function run(): Promise<void> {
         }
 
         // don't publish if version already published
-        const nonPublishedPackages = await getNonPublishedPackages(versions);
+        const nonPublishedPackages = await getNonPublishedPackages(packages);
 
         return nonPublishedPackages.length > 0;
     });
@@ -51,12 +52,15 @@ async function run(): Promise<void> {
         await exec.exec('npm ci');
     });
 
+    // build packages
+    const packageFiles = await Promise.all(packages.map(item => createPackageTarball(item.location)));
+
     // create github release
     if (config.githubToken) {
         await core.group('Create GitHub release', async () => {
             const client = github.getOctokit(config.githubToken);
 
-            await createRelease(client as any as Octokit, maxVersion);
+            await createRelease(client as any as Octokit, maxVersion, packageFiles);
         });
     } else {
         core.warning('GitHub token not provided, not creating GitHub release page.');

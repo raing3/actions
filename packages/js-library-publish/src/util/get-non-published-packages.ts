@@ -1,17 +1,17 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import { PackageVersions } from './get-package-versions';
+import { Package } from './get-packages';
 
-export const getNonPublishedPackages = async (versions: PackageVersions): Promise<string[]> => {
-    const nonPublishedPackaged: string[] = [];
-    const publishedPackages: string[] = [];
-    const promises = Object.entries(versions).map(async ([packageName, version]) => {
+export const getNonPublishedPackages = async (packages: Package[]): Promise<Package[]> => {
+    const nonPublishedPackaged: Package[] = [];
+    const publishedPackages: Package[] = [];
+    const promises = packages.map(async item => {
         let output = '';
         let errorOutput = '';
 
         try {
             // check if current commit is tagged with the same version in the package.json
-            await exec.exec(`npm view ${packageName} versions --json`, [], {
+            await exec.exec(`npm view ${item.name} versions --json`, [], {
                 silent: true,
                 listeners: {
                     stdout: (data: Buffer): void => {
@@ -23,17 +23,17 @@ export const getNonPublishedPackages = async (versions: PackageVersions): Promis
                 }
             });
 
-            const isPublished = output.indexOf(`"${version}"`) >= 0;
+            const isPublished = output.indexOf(`"v${item.version}"`) >= 0;
 
             if (isPublished) {
-                publishedPackages.push(packageName);
+                publishedPackages.push(item);
             } else {
-                nonPublishedPackaged.push(packageName);
+                nonPublishedPackaged.push(item);
             }
         } catch (error: any) {
             if (errorOutput.indexOf('E404') >= 0) {
-                core.info(`${packageName} has never been published.`);
-                nonPublishedPackaged.push(packageName);
+                core.info(`${item.name} has never been published.`);
+                nonPublishedPackaged.push(item);
                 return;
             }
 
@@ -48,11 +48,11 @@ export const getNonPublishedPackages = async (versions: PackageVersions): Promis
     await Promise.all(promises);
 
     if (publishedPackages.length > 0) {
-        core.info(`The following packages have already been publish: ${publishedPackages.join(', ')}`);
+        core.info(`${publishedPackages.map(item => item.name).join(', ')} has already been published.`);
     }
 
     if (nonPublishedPackaged.length > 0) {
-        core.info(`The following packages have not yet been publish: ${nonPublishedPackaged.join(', ')}`);
+        core.info(`${nonPublishedPackaged.join(', ')} has not been published yet.`);
     }
 
     return nonPublishedPackaged;

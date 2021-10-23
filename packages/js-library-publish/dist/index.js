@@ -12798,6 +12798,7 @@ const exec = __importStar(__nccwpck_require__(1514));
 const github = __importStar(__nccwpck_require__(5438));
 const task_1 = __nccwpck_require__(2871);
 const util_1 = __nccwpck_require__(9604);
+const create_package_tarball_1 = __nccwpck_require__(2774);
 const fs_1 = __importDefault(__nccwpck_require__(5747));
 const packageContent = JSON.parse(fs_1.default.readFileSync('./package.json').toString());
 const isLernaRepository = fs_1.default.existsSync('./lerna.json');
@@ -12809,16 +12810,16 @@ const config = {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         process.env.CI = 'true'; // eslint-disable-line id-length
-        const versions = yield (0, util_1.getPackageVersions)(packageContent, isLernaRepository);
-        const maxVersion = (0, util_1.getMaxVersion)(Object.values(versions));
-        const uniqueVersions = (0, util_1.getUniqueVersions)(Object.values(versions));
+        const packages = yield (0, util_1.getPackages)(packageContent, isLernaRepository);
+        const maxVersion = (0, util_1.getMaxVersion)(packages);
+        const uniqueVersions = (0, util_1.getUniqueVersions)(packages);
         const isViableForRelease = yield core.group('Check if commit is viable for release', () => __awaiter(this, void 0, void 0, function* () {
             // don't publish on failure or if commit hasn't been tagged
             if (!(yield (0, util_1.headHasVersionTag)(uniqueVersions))) {
                 return false;
             }
             // don't publish if version already published
-            const nonPublishedPackages = yield (0, util_1.getNonPublishedPackages)(versions);
+            const nonPublishedPackages = yield (0, util_1.getNonPublishedPackages)(packages);
             return nonPublishedPackages.length > 0;
         }));
         if (!isViableForRelease) {
@@ -12830,11 +12831,13 @@ function run() {
         yield core.group('Installing dependencies', () => __awaiter(this, void 0, void 0, function* () {
             yield exec.exec('npm ci');
         }));
+        // build packages
+        const packageFiles = yield Promise.all(packages.map(item => (0, create_package_tarball_1.createPackageTarball)(item.location)));
         // create github release
         if (config.githubToken) {
             yield core.group('Create GitHub release', () => __awaiter(this, void 0, void 0, function* () {
                 const client = github.getOctokit(config.githubToken);
-                yield (0, task_1.createRelease)(client, maxVersion);
+                yield (0, task_1.createRelease)(client, maxVersion, packageFiles);
             }));
         }
         else {
@@ -12897,38 +12900,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.createRelease = void 0;
 const core = __importStar(__nccwpck_require__(2186));
-const exec = __importStar(__nccwpck_require__(1514));
 const github = __importStar(__nccwpck_require__(5438));
 const fs_1 = __importDefault(__nccwpck_require__(5747));
 const util_1 = __nccwpck_require__(9604);
-const createRelease = (client, version) => __awaiter(void 0, void 0, void 0, function* () {
-    let output = '';
+const createRelease = (client, version, packageFiles) => __awaiter(void 0, void 0, void 0, function* () {
     if (yield (0, util_1.isReleased)(client, version)) {
         core.info(`GitHub release for version ${version} already exists, skipping creation.`);
         return;
     }
-    yield exec.exec('npm pack', [], {
-        listeners: {
-            stdout: (data) => {
-                output += data.toString();
-            }
-        }
-    });
-    output = output.trim();
-    const fileName = output.substr(output.lastIndexOf('\n') + 1);
     const release = yield client.rest.repos.createRelease({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         tag_name: version,
         name: `Release ${version}`
     });
-    yield client.rest.repos.uploadReleaseAsset({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        release_id: release.data.id,
-        name: fileName,
-        data: fs_1.default.readFileSync(fileName, 'utf8')
-    });
+    yield Promise.all(packageFiles.map((packageFile) => __awaiter(void 0, void 0, void 0, function* () {
+        yield client.rest.repos.uploadReleaseAsset({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            release_id: release.data.id,
+            name: packageFile,
+            data: fs_1.default.readFileSync(packageFile, 'utf8')
+        });
+    })));
 });
 exports.createRelease = createRelease;
 
@@ -13011,6 +13005,66 @@ exports.publish = publish;
 
 /***/ }),
 
+/***/ 2774:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.createPackageTarball = void 0;
+const exec = __importStar(__nccwpck_require__(1514));
+const path_1 = __importDefault(__nccwpck_require__(5622));
+const createPackageTarball = (directory) => __awaiter(void 0, void 0, void 0, function* () {
+    let output = '';
+    directory = path_1.default.resolve(directory);
+    yield exec.exec('npm pack', [], {
+        cwd: directory,
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            }
+        }
+    });
+    output = output.trim();
+    const fileName = output.substr(output.lastIndexOf('\n') + 1);
+    return path_1.default.resolve(directory, fileName);
+});
+exports.createPackageTarball = createPackageTarball;
+
+
+/***/ }),
+
 /***/ 3345:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -13022,12 +13076,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getMaxVersion = void 0;
 const semver_compare_1 = __importDefault(__nccwpck_require__(2568));
-const getMaxVersion = (versions) => {
-    if (versions.length === 0) {
-        throw new Error('No versions have been provided.');
+const getMaxVersion = (packages) => {
+    if (packages.length === 0) {
+        throw new Error('No packages have been provided.');
     }
-    const sorted = versions.sort(semver_compare_1.default);
-    return sorted[sorted.length - 1];
+    const sorted = packages.map(item => item.version).sort(semver_compare_1.default);
+    return `v${sorted[sorted.length - 1]}`;
 };
 exports.getMaxVersion = getMaxVersion;
 
@@ -13071,15 +13125,15 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getNonPublishedPackages = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
-const getNonPublishedPackages = (versions) => __awaiter(void 0, void 0, void 0, function* () {
+const getNonPublishedPackages = (packages) => __awaiter(void 0, void 0, void 0, function* () {
     const nonPublishedPackaged = [];
     const publishedPackages = [];
-    const promises = Object.entries(versions).map(([packageName, version]) => __awaiter(void 0, void 0, void 0, function* () {
+    const promises = packages.map((item) => __awaiter(void 0, void 0, void 0, function* () {
         let output = '';
         let errorOutput = '';
         try {
             // check if current commit is tagged with the same version in the package.json
-            yield exec.exec(`npm view ${packageName} versions --json`, [], {
+            yield exec.exec(`npm view ${item.name} versions --json`, [], {
                 silent: true,
                 listeners: {
                     stdout: (data) => {
@@ -13090,18 +13144,18 @@ const getNonPublishedPackages = (versions) => __awaiter(void 0, void 0, void 0, 
                     }
                 }
             });
-            const isPublished = output.indexOf(`"${version}"`) >= 0;
+            const isPublished = output.indexOf(`"v${item.version}"`) >= 0;
             if (isPublished) {
-                publishedPackages.push(packageName);
+                publishedPackages.push(item);
             }
             else {
-                nonPublishedPackaged.push(packageName);
+                nonPublishedPackaged.push(item);
             }
         }
         catch (error) {
             if (errorOutput.indexOf('E404') >= 0) {
-                core.info(`${packageName} has never been published.`);
-                nonPublishedPackaged.push(packageName);
+                core.info(`${item.name} has never been published.`);
+                nonPublishedPackaged.push(item);
                 return;
             }
             if (errorOutput) {
@@ -13112,10 +13166,10 @@ const getNonPublishedPackages = (versions) => __awaiter(void 0, void 0, void 0, 
     }));
     yield Promise.all(promises);
     if (publishedPackages.length > 0) {
-        core.info(`The following packages have already been publish: ${publishedPackages.join(', ')}`);
+        core.info(`${publishedPackages.map(item => item.name).join(', ')} has already been published.`);
     }
     if (nonPublishedPackaged.length > 0) {
-        core.info(`The following packages have not yet been publish: ${nonPublishedPackaged.join(', ')}`);
+        core.info(`${nonPublishedPackaged.join(', ')} has not been published yet.`);
     }
     return nonPublishedPackaged;
 });
@@ -13124,7 +13178,7 @@ exports.getNonPublishedPackages = getNonPublishedPackages;
 
 /***/ }),
 
-/***/ 5854:
+/***/ 2501:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -13157,10 +13211,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getPackageVersions = void 0;
+exports.getPackages = void 0;
 const exec = __importStar(__nccwpck_require__(1514));
-const getPackageVersions = (packageContent, isLernaRepository) => __awaiter(void 0, void 0, void 0, function* () {
+const path_1 = __importDefault(__nccwpck_require__(5622));
+const getPackages = (packageContent, isLernaRepository) => __awaiter(void 0, void 0, void 0, function* () {
     if (isLernaRepository) {
         let output = '';
         // check if current commit is tagged with the same version in the package.json
@@ -13172,19 +13230,22 @@ const getPackageVersions = (packageContent, isLernaRepository) => __awaiter(void
                 }
             }
         });
-        const parsed = JSON.parse(output);
-        const versions = {};
-        parsed.forEach(item => {
-            versions[item.name] = `v${item.version}`;
-        });
-        return versions;
+        return JSON.parse(output);
     }
-    if ((packageContent === null || packageContent === void 0 ? void 0 : packageContent.name) && (packageContent === null || packageContent === void 0 ? void 0 : packageContent.version)) {
-        return { [packageContent.name]: `v${packageContent.version}` };
+    if ((packageContent === null || packageContent === void 0 ? void 0 : packageContent.name) &&
+        (packageContent === null || packageContent === void 0 ? void 0 : packageContent.version)) {
+        return [
+            {
+                name: packageContent.name,
+                version: packageContent.version,
+                location: path_1.default.resolve('.'),
+                'private': Boolean(packageContent.private)
+            }
+        ];
     }
-    return {};
+    throw new Error('No packages found in repository.');
 });
-exports.getPackageVersions = getPackageVersions;
+exports.getPackages = getPackages;
 
 
 /***/ }),
@@ -13196,8 +13257,8 @@ exports.getPackageVersions = getPackageVersions;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getUniqueVersions = void 0;
-const getUniqueVersions = (versions) => {
-    return [...new Set(versions)];
+const getUniqueVersions = (packages) => {
+    return [...new Set(packages.map(item => `v${item.version}`))];
 };
 exports.getUniqueVersions = getUniqueVersions;
 
@@ -13290,7 +13351,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 __exportStar(__nccwpck_require__(3345), exports);
-__exportStar(__nccwpck_require__(5854), exports);
+__exportStar(__nccwpck_require__(2501), exports);
 __exportStar(__nccwpck_require__(2258), exports);
 __exportStar(__nccwpck_require__(4275), exports);
 __exportStar(__nccwpck_require__(4116), exports);

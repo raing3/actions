@@ -1,11 +1,12 @@
 import compare from 'semver-compare';
+import { Package } from './get-packages';
 
-export const getMaxVersion = (versions: string[]): string => {
-    if (versions.length === 0) {
-        throw new Error('No versions have been provided.');
+export const getMaxVersion = (packages: Package[]): string => {
+    if (packages.length === 0) {
+        throw new Error('No packages have been provided.');
     }
 
-    const sorted = versions.sort(compare);
+    const sorted = packages.map(item => item.version).sort(compare);
 
-    return sorted[sorted.length - 1];
+    return `v${sorted[sorted.length - 1]}`;
 };
