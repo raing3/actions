@@ -54,13 +54,13 @@ async function run(): Promise<void> {
     // build all packages, there may be dependencies on packages which aren't being published
     const packageFilesToPublish: string[] = [];
 
-    await Promise.all(packages.map(async item => {
+    for (const item of packages) {
         const packageFile = await createPackageTarball(item.location);
 
         if (packagesToPublish.indexOf(item)) {
             packageFilesToPublish.push(packageFile);
         }
-    }));
+    }
 
     // create github release
     if (config.githubToken) {

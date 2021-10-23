@@ -12832,12 +12832,12 @@ function run() {
         }));
         // build all packages, there may be dependencies on packages which aren't being published
         const packageFilesToPublish = [];
-        yield Promise.all(packages.map((item) => __awaiter(this, void 0, void 0, function* () {
+        for (const item of packages) {
             const packageFile = yield (0, create_package_tarball_1.createPackageTarball)(item.location);
             if (packagesToPublish.indexOf(item)) {
                 packageFilesToPublish.push(packageFile);
             }
-        })));
+        }
         // create github release
         if (config.githubToken) {
             yield core.group('Create GitHub release', () => __awaiter(this, void 0, void 0, function* () {
