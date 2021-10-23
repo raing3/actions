@@ -1,9 +1,9 @@
-import * as github from '@actions/github';
+import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import { Octokit } from '@octokit/rest';
+import * as github from '@actions/github';
 import fs from 'fs';
 import { isReleased } from '../util';
-import * as core from '@actions/core';
+import { Octokit } from '@octokit/rest';
 
 export const createRelease = async (client: Octokit, version: string): Promise<void> => {
     const tag = `v${version}`;
@@ -32,12 +32,10 @@ export const createRelease = async (client: Octokit, version: string): Promise<v
     });
 
     await client.repos.uploadReleaseAsset({
-        url: release.data.upload_url,
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        release_id: release.data.id,
         name: fileName,
-        data: fs.readFileSync(fileName),
-        headers: {
-            'content-length': fs.statSync(fileName).size,
-            'content-type': 'application/x-gzip'
-        }
+        data: fs.readFileSync(fileName).toString('utf8')
     });
 };

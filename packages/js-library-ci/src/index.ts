@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import fs from 'fs';
 import { lint, test } from './task';
+import fs from 'fs';
 
 const packageContent = JSON.parse(fs.readFileSync('./package.json').toString());
 
