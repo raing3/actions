@@ -24,14 +24,14 @@ export const createRelease = async (client: Octokit, version: string): Promise<v
 
     const fileName = output.trim();
 
-    const release = await client.repos.createRelease({
+    const release = await client.rest.repos.createRelease({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         tag_name: tag, // eslint-disable-line @typescript-eslint/naming-convention
         name: `Release ${tag}`
     });
 
-    await client.repos.uploadReleaseAsset({
+    await client.rest.repos.uploadReleaseAsset({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         release_id: release.data.id, // eslint-disable-line @typescript-eslint/naming-convention

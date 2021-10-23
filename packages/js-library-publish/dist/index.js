@@ -12929,13 +12929,13 @@ const createRelease = (client, version) => __awaiter(void 0, void 0, void 0, fun
         }
     });
     const fileName = output.trim();
-    const release = yield client.repos.createRelease({
+    const release = yield client.rest.repos.createRelease({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         tag_name: tag,
         name: `Release ${tag}`
     });
-    yield client.repos.uploadReleaseAsset({
+    yield client.rest.repos.uploadReleaseAsset({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         release_id: release.data.id,
@@ -13204,7 +13204,7 @@ exports.isReleased = void 0;
 const github = __importStar(__nccwpck_require__(5438));
 const isReleased = (client, tag) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield client.repos.getReleaseByTag({
+        yield client.rest.repos.getReleaseByTag({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             tag: tag
