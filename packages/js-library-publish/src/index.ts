@@ -4,7 +4,7 @@ import * as github from '@actions/github';
 import { createRelease, publish } from './task';
 import {
     getMaxVersion,
-    getNonPublishedPackages,
+    getPackagesToPublish,
     getPackages,
     getUniqueVersions,
     headHasVersionTag
@@ -24,22 +24,19 @@ const config = {
 async function run(): Promise<void> {
     process.env.CI = 'true'; // eslint-disable-line id-length
 
-    const packages = await getPackages(packageContent, isLernaRepository);
-    const maxVersion = getMaxVersion(packages);
+    const packages = (await getPackages(packageContent, isLernaRepository));
     const uniqueVersions = getUniqueVersions(packages);
-    const isViableForRelease = await core.group('Check if commit is viable for release', async () => {
+    const packagesToPublish = await core.group('Check if commit is viable for release', async () => {
         // don't publish on failure or if commit hasn't been tagged
         if (!await headHasVersionTag(uniqueVersions)) {
-            return false;
+            return [];
         }
 
         // don't publish if version already published
-        const nonPublishedPackages = await getNonPublishedPackages(packages);
-
-        return nonPublishedPackages.length > 0;
+        return await getPackagesToPublish(packages);
     });
 
-    if (!isViableForRelease) {
+    if (packagesToPublish.length <= 0) {
         core.info(
             `To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
             'and push the tag.'
@@ -47,13 +44,15 @@ async function run(): Promise<void> {
         return;
     }
 
+    const maxVersion = getMaxVersion(packagesToPublish);
+
     // install dependencies
     await core.group('Installing dependencies', async () => {
         await exec.exec('npm ci');
     });
 
     // build packages
-    const packageFiles = await Promise.all(packages.map(item => createPackageTarball(item.location)));
+    const packageFiles = await Promise.all(packagesToPublish.map(item => createPackageTarball(item.location)));
 
     // create github release
     if (config.githubToken) {
@@ -69,7 +68,7 @@ async function run(): Promise<void> {
     // publish to npm
     if (config.npmToken) {
         await core.group('Publish to NPM', async () => {
-            await publish(config.npmToken, Boolean(packageContent.private), isLernaRepository);
+            await publish(config.npmToken, packageFiles);
         });
     } else {
         core.warning('NPM token not provided, not publishing to npmjs.com.');

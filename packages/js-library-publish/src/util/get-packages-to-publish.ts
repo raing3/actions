@@ -2,12 +2,18 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import { Package } from './get-packages';
 
-export const getNonPublishedPackages = async (packages: Package[]): Promise<Package[]> => {
+export const getPackagesToPublish = async (packages: Package[]): Promise<Package[]> => {
     const nonPublishedPackaged: Package[] = [];
+    const unpublishablePackages: Package[] = [];
     const publishedPackages: Package[] = [];
     const promises = packages.map(async item => {
         let output = '';
         let errorOutput = '';
+
+        if (item.private) {
+            unpublishablePackages.push(item);
+            return;
+        }
 
         try {
             // check if current commit is tagged with the same version in the package.json
@@ -49,6 +55,10 @@ export const getNonPublishedPackages = async (packages: Package[]): Promise<Pack
 
     if (publishedPackages.length > 0) {
         core.info(`${publishedPackages.map(item => item.name).join(', ')} has already been published.`);
+    }
+
+    if (unpublishablePackages.length > 0) {
+        core.info(`${unpublishablePackages.map(item => item.name).join(', ')} is private and will not be published.`);
     }
 
     if (nonPublishedPackaged.length > 0) {

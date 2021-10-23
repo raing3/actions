@@ -12810,29 +12810,28 @@ const config = {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         process.env.CI = 'true'; // eslint-disable-line id-length
-        const packages = yield (0, util_1.getPackages)(packageContent, isLernaRepository);
-        const maxVersion = (0, util_1.getMaxVersion)(packages);
+        const packages = (yield (0, util_1.getPackages)(packageContent, isLernaRepository));
         const uniqueVersions = (0, util_1.getUniqueVersions)(packages);
-        const isViableForRelease = yield core.group('Check if commit is viable for release', () => __awaiter(this, void 0, void 0, function* () {
+        const packagesToPublish = yield core.group('Check if commit is viable for release', () => __awaiter(this, void 0, void 0, function* () {
             // don't publish on failure or if commit hasn't been tagged
             if (!(yield (0, util_1.headHasVersionTag)(uniqueVersions))) {
-                return false;
+                return [];
             }
             // don't publish if version already published
-            const nonPublishedPackages = yield (0, util_1.getNonPublishedPackages)(packages);
-            return nonPublishedPackages.length > 0;
+            return yield (0, util_1.getPackagesToPublish)(packages);
         }));
-        if (!isViableForRelease) {
+        if (packagesToPublish.length <= 0) {
             core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
                 'and push the tag.');
             return;
         }
+        const maxVersion = (0, util_1.getMaxVersion)(packagesToPublish);
         // install dependencies
         yield core.group('Installing dependencies', () => __awaiter(this, void 0, void 0, function* () {
             yield exec.exec('npm ci');
         }));
         // build packages
-        const packageFiles = yield Promise.all(packages.map(item => (0, create_package_tarball_1.createPackageTarball)(item.location)));
+        const packageFiles = yield Promise.all(packagesToPublish.map(item => (0, create_package_tarball_1.createPackageTarball)(item.location)));
         // create github release
         if (config.githubToken) {
             yield core.group('Create GitHub release', () => __awaiter(this, void 0, void 0, function* () {
@@ -12846,7 +12845,7 @@ function run() {
         // publish to npm
         if (config.npmToken) {
             yield core.group('Publish to NPM', () => __awaiter(this, void 0, void 0, function* () {
-                yield (0, task_1.publish)(config.npmToken, Boolean(packageContent.private), isLernaRepository);
+                yield (0, task_1.publish)(config.npmToken, packageFiles);
             }));
         }
         else {
@@ -12987,18 +12986,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.publish = void 0;
 const exec = __importStar(__nccwpck_require__(1514));
-const publish = (nodeAuthToken, isPrivate, isLernaRepository) => __awaiter(void 0, void 0, void 0, function* () {
-    const options = {
-        env: Object.assign(Object.assign({}, process.env), { NODE_AUTH_TOKEN: nodeAuthToken })
-    };
+const publish = (nodeAuthToken, packageFiles) => __awaiter(void 0, void 0, void 0, function* () {
     // eslint-disable-next-line no-template-curly-in-string
     yield exec.exec('npm config set //registry.npmjs.org/:_authToken ${NODE_AUTH_TOKEN}');
-    if (isLernaRepository) {
-        yield exec.exec('lerna publish from-git', [], options);
-    }
-    else {
-        yield exec.exec('npm publish', isPrivate ? [] : ['--access=public'], options);
-    }
+    yield Promise.all(packageFiles.map((packageFile) => __awaiter(void 0, void 0, void 0, function* () {
+        yield exec.exec(`npm publish "${packageFile}" --access=public`, [], {
+            env: Object.assign(Object.assign({}, process.env), { NODE_AUTH_TOKEN: nodeAuthToken })
+        });
+    })));
 });
 exports.publish = publish;
 
@@ -13088,7 +13083,7 @@ exports.getMaxVersion = getMaxVersion;
 
 /***/ }),
 
-/***/ 4116:
+/***/ 487:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -13122,15 +13117,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getNonPublishedPackages = void 0;
+exports.getPackagesToPublish = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
-const getNonPublishedPackages = (packages) => __awaiter(void 0, void 0, void 0, function* () {
+const getPackagesToPublish = (packages) => __awaiter(void 0, void 0, void 0, function* () {
     const nonPublishedPackaged = [];
+    const unpublishablePackages = [];
     const publishedPackages = [];
     const promises = packages.map((item) => __awaiter(void 0, void 0, void 0, function* () {
         let output = '';
         let errorOutput = '';
+        if (item.private) {
+            unpublishablePackages.push(item);
+            return;
+        }
         try {
             // check if current commit is tagged with the same version in the package.json
             yield exec.exec(`npm view ${item.name} versions --json`, [], {
@@ -13168,12 +13168,15 @@ const getNonPublishedPackages = (packages) => __awaiter(void 0, void 0, void 0, 
     if (publishedPackages.length > 0) {
         core.info(`${publishedPackages.map(item => item.name).join(', ')} has already been published.`);
     }
+    if (unpublishablePackages.length > 0) {
+        core.info(`${unpublishablePackages.map(item => item.name).join(', ')} is private and will not be published.`);
+    }
     if (nonPublishedPackaged.length > 0) {
         core.info(`${nonPublishedPackaged.join(', ')} has not been published yet.`);
     }
     return nonPublishedPackaged;
 });
-exports.getNonPublishedPackages = getNonPublishedPackages;
+exports.getPackagesToPublish = getPackagesToPublish;
 
 
 /***/ }),
@@ -13354,7 +13357,7 @@ __exportStar(__nccwpck_require__(3345), exports);
 __exportStar(__nccwpck_require__(2501), exports);
 __exportStar(__nccwpck_require__(2258), exports);
 __exportStar(__nccwpck_require__(4275), exports);
-__exportStar(__nccwpck_require__(4116), exports);
+__exportStar(__nccwpck_require__(487), exports);
 __exportStar(__nccwpck_require__(3765), exports);
 
 
