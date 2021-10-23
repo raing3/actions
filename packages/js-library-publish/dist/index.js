@@ -13123,21 +13123,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.isPublished = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
-const fs_1 = __importDefault(__nccwpck_require__(5747));
 const isPublished = (version) => __awaiter(void 0, void 0, void 0, function* () {
     let output = '';
     let errorOutput = '';
     try {
         // check if current commit is tagged with the same version in the package.json
         yield exec.exec('npm show . versions --json', [], {
-            errStream: fs_1.default.createWriteStream('/dev/null'),
             listeners: {
                 stdout: (data) => {
                     output += data.toString();
