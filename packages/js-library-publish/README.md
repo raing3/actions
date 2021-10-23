@@ -25,3 +25,13 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           npm_token: ${{ secrets.NPM_TOKEN }}
 ```
+
+To tag a new version run the following command and push the tag that is created:
+
+```
+# Single package repositories
+npm version <patch|minor|major>
+
+# Lerna monorepo repositories
+lerna version <patch|minor|major>
+```

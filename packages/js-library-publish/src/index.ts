@@ -7,6 +7,7 @@ import fs from 'fs';
 import { Octokit } from '@octokit/rest';
 
 const packageContent = JSON.parse(fs.readFileSync('./package.json').toString());
+const isLernaRepository = fs.existsSync('./lerna.json');
 const config = {
     githubToken: core.getInput('github_token'),
     npmToken: core.getInput('npm_token'),
@@ -32,6 +33,10 @@ async function run(): Promise<void> {
     });
 
     if (!isViableForRelease) {
+        core.info(
+            `To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major>` +
+            'and push the tag.'
+        );
         return;
     }
 

@@ -12816,6 +12816,7 @@ const task_1 = __nccwpck_require__(2871);
 const util_1 = __nccwpck_require__(9604);
 const fs_1 = __importDefault(__nccwpck_require__(5747));
 const packageContent = JSON.parse(fs_1.default.readFileSync('./package.json').toString());
+const isLernaRepository = fs_1.default.existsSync('./lerna.json');
 const config = {
     githubToken: core.getInput('github_token'),
     npmToken: core.getInput('npm_token'),
@@ -12837,6 +12838,8 @@ function run() {
             return true;
         }));
         if (!isViableForRelease) {
+            core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major>` +
+                'and push the tag.');
             return;
         }
         // install dependencies
