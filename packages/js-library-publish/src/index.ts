@@ -54,7 +54,7 @@ async function run(): Promise<void> {
     // publish to npm
     if (config.npmToken) {
         await core.group('Publish to NPM', async () => {
-            await publish(config.npmToken);
+            await publish(config.npmToken, Boolean(packageContent.private));
         });
     } else {
         core.warning('NPM token not provided, not publishing to npmjs.com.');

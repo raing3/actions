@@ -12856,7 +12856,7 @@ function run() {
         // publish to npm
         if (config.npmToken) {
             yield core.group('Publish to NPM', () => __awaiter(this, void 0, void 0, function* () {
-                yield (0, task_1.publish)(config.npmToken);
+                yield (0, task_1.publish)(config.npmToken, Boolean(packageContent.private));
             }));
         }
         else {
@@ -13000,10 +13000,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.publish = void 0;
 const exec = __importStar(__nccwpck_require__(1514));
-const publish = (nodeAuthToken) => __awaiter(void 0, void 0, void 0, function* () {
+const publish = (nodeAuthToken, isPrivate) => __awaiter(void 0, void 0, void 0, function* () {
     // eslint-disable-next-line no-template-curly-in-string
     yield exec.exec('npm config set //registry.npmjs.org/:_authToken ${NODE_AUTH_TOKEN}');
-    yield exec.exec('npm publish', [], {
+    yield exec.exec('npm publish', isPrivate ? [] : ['--access=public'], {
         env: Object.assign(Object.assign({}, process.env), { NODE_AUTH_TOKEN: nodeAuthToken })
     });
 });
