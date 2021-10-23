@@ -12913,6 +12913,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const fs_1 = __importDefault(__nccwpck_require__(5747));
 const util_1 = __nccwpck_require__(9604);
+const path_1 = __importDefault(__nccwpck_require__(5622));
 const createRelease = (client, version, packageFiles) => __awaiter(void 0, void 0, void 0, function* () {
     if (yield (0, util_1.isReleased)(client, version)) {
         core.info(`GitHub release for version ${version} already exists, skipping creation.`);
@@ -12929,7 +12930,7 @@ const createRelease = (client, version, packageFiles) => __awaiter(void 0, void 
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             release_id: release.data.id,
-            name: packageFile,
+            name: path_1.default.basename(packageFile),
             data: fs_1.default.readFileSync(packageFile, 'utf8')
         });
     })));

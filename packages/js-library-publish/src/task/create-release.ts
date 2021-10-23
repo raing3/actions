@@ -3,6 +3,7 @@ import * as github from '@actions/github';
 import fs from 'fs';
 import { isReleased } from '../util';
 import { Octokit } from '@octokit/rest';
+import path from 'path';
 
 export const createRelease = async (client: Octokit, version: string, packageFiles: string[]): Promise<void> => {
     if (await isReleased(client, version)) {
@@ -22,7 +23,7 @@ export const createRelease = async (client: Octokit, version: string, packageFil
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             release_id: release.data.id, // eslint-disable-line @typescript-eslint/naming-convention
-            name: packageFile,
+            name: path.basename(packageFile),
             data: fs.readFileSync(packageFile, 'utf8')
         });
     }));
