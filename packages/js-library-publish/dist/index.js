@@ -13128,17 +13128,33 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const isPublished = (version) => __awaiter(void 0, void 0, void 0, function* () {
     let output = '';
-    // check if current commit is tagged with the same version in the package.json
-    yield exec.exec('npm show . versions --json', [], {
-        listeners: {
-            stdout: (data) => {
-                output += data.toString();
+    let errorOutput = '';
+    try {
+        // check if current commit is tagged with the same version in the package.json
+        yield exec.exec('npm show . versions --json', [], {
+            listeners: {
+                stdout: (data) => {
+                    output += data.toString();
+                },
+                stderr: (data) => {
+                    errorOutput += data.toString();
+                }
             }
+        });
+        const result = output.indexOf(`"${version}"`) >= 0;
+        core.info(`Checking if version has already been published: ${version}, result: ${result}`);
+        return result;
+    }
+    catch (error) {
+        if (errorOutput.indexOf('E404') >= 0) {
+            core.info('This package has never been published.');
+            return false;
         }
-    });
-    const result = output.indexOf(`"${version}"`) >= 0;
-    core.info(`Checking if version has already been published: ${version}, result: ${result}`);
-    return result;
+        if (errorOutput) {
+            throw new Error(errorOutput);
+        }
+        throw error;
+    }
 });
 exports.isPublished = isPublished;
 
