@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import fs from 'fs';
 
 export const isPublished = async (version: string): Promise<boolean> => {
     let output = '';
@@ -8,6 +9,7 @@ export const isPublished = async (version: string): Promise<boolean> => {
     try {
         // check if current commit is tagged with the same version in the package.json
         await exec.exec('npm show . versions --json', [], {
+            errStream: fs.createWriteStream('/dev/null'), // avoid showing E404 errors in the output
             listeners: {
                 stdout: (data: Buffer): void => {
                     output += data.toString();

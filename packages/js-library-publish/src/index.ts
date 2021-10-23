@@ -52,13 +52,13 @@ async function run(): Promise<void> {
     }
 
     // publish to npm
-    if (config.npmToken) {
-        await core.group('Publish to NPM', async () => {
-            await publish(config.npmToken);
-        });
-    } else {
-        core.warning('NPM token not provided, not publishing to npmjs.com.');
-    }
+    // if (config.npmToken) {
+    //     await core.group('Publish to NPM', async () => {
+    //         await publish(config.npmToken);
+    //     });
+    // } else {
+    //     core.warning('NPM token not provided, not publishing to npmjs.com.');
+    // }
 }
 
 run().catch(error => {
