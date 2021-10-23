@@ -34,7 +34,7 @@ export const createRelease = async (client: Octokit, version: string): Promise<v
     await client.repos.uploadReleaseAsset({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
-        release_id: release.data.id,
+        release_id: release.data.id, // eslint-disable-line @typescript-eslint/naming-convention
         name: fileName,
         data: fs.readFileSync(fileName).toString('utf8')
     });
