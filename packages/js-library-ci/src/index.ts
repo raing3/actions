@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import { lint, test } from './task';
+import { build, lint, test } from './task';
 import fs from 'fs';
 
 const packageContent = JSON.parse(fs.readFileSync('./package.json').toString());
@@ -12,6 +12,16 @@ async function run(): Promise<void> {
     await core.group('Installing dependencies', async () => {
         await exec.exec('npm ci');
     });
+
+    // build packages if lerna.json exists
+    // packages may have dependencies on one another and cause lint/test issues if dependencies aren't built first
+    if (fs.existsSync('learn.json')) {
+        await core.group('Build dependencies', async () => {
+            core.info('Lerna configuration found, configuration and building packages.');
+            await exec.exec('node_modules/.bin/lerna bootstrap --ci');
+            await build(packageContent);
+        });
+    }
 
     // lint
     await core.group('Lint', async () => {
