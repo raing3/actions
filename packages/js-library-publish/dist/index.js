@@ -12818,11 +12818,14 @@ function run() {
                 return [];
             }
             // don't publish if version already published
-            return (0, util_1.getPackagesToPublish)(packages);
+            const result = yield (0, util_1.getPackagesToPublish)(packages);
+            if (result.length <= 0) {
+                core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
+                    'and push the tag.');
+            }
+            return result;
         }));
         if (packagesToPublish.length <= 0) {
-            core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
-                'and push the tag.');
             return;
         }
         const maxVersion = (0, util_1.getMaxVersion)(packagesToPublish);
@@ -12832,31 +12835,33 @@ function run() {
         }));
         // build all packages, there may be dependencies on packages which aren't being published
         const packageFilesToPublish = [];
-        for (const item of packages) {
-            const packageFile = yield (0, create_package_tarball_1.createPackageTarball)(item.location);
-            if (packagesToPublish.indexOf(item)) {
-                packageFilesToPublish.push(packageFile);
+        yield core.group('Building packages', () => __awaiter(this, void 0, void 0, function* () {
+            for (const item of packages) {
+                const packageFile = yield (0, create_package_tarball_1.createPackageTarball)(item.location);
+                if (packagesToPublish.indexOf(item)) {
+                    packageFilesToPublish.push(packageFile);
+                }
             }
-        }
+        }));
         // create github release
-        if (config.githubToken) {
-            yield core.group('Create GitHub release', () => __awaiter(this, void 0, void 0, function* () {
+        yield core.group('Create GitHub release', () => __awaiter(this, void 0, void 0, function* () {
+            if (config.githubToken) {
                 const client = github.getOctokit(config.githubToken);
                 yield (0, task_1.createRelease)(client, maxVersion, packageFilesToPublish);
-            }));
-        }
-        else {
-            core.warning('GitHub token not provided, not creating GitHub release page.');
-        }
+            }
+            else {
+                core.warning('GitHub token not provided, not creating GitHub release page.');
+            }
+        }));
         // publish to npm
-        if (config.npmToken) {
-            yield core.group('Publish to NPM', () => __awaiter(this, void 0, void 0, function* () {
+        yield core.group('Publish to NPM', () => __awaiter(this, void 0, void 0, function* () {
+            if (config.npmToken) {
                 yield (0, task_1.publish)(config.npmToken, packageFilesToPublish);
-            }));
-        }
-        else {
-            core.warning('NPM token not provided, not publishing to npmjs.com.');
-        }
+            }
+            else {
+                core.warning('NPM token not provided, not publishing to npmjs.com.');
+            }
+        }));
     });
 }
 run().catch(error => {

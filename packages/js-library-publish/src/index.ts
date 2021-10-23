@@ -33,14 +33,19 @@ async function run(): Promise<void> {
         }
 
         // don't publish if version already published
-        return getPackagesToPublish(packages);
+        const result = await getPackagesToPublish(packages);
+
+        if (result.length <= 0) {
+            core.info(
+                `To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
+                'and push the tag.'
+            );
+        }
+
+        return result;
     });
 
     if (packagesToPublish.length <= 0) {
-        core.info(
-            `To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
-            'and push the tag.'
-        );
         return;
     }
 
@@ -54,33 +59,35 @@ async function run(): Promise<void> {
     // build all packages, there may be dependencies on packages which aren't being published
     const packageFilesToPublish: string[] = [];
 
-    for (const item of packages) {
-        const packageFile = await createPackageTarball(item.location);
+    await core.group('Building packages', async () => {
+        for (const item of packages) {
+            const packageFile = await createPackageTarball(item.location);
 
-        if (packagesToPublish.indexOf(item)) {
-            packageFilesToPublish.push(packageFile);
+            if (packagesToPublish.indexOf(item)) {
+                packageFilesToPublish.push(packageFile);
+            }
         }
-    }
+    });
 
     // create github release
-    if (config.githubToken) {
-        await core.group('Create GitHub release', async () => {
+    await core.group('Create GitHub release', async () => {
+        if (config.githubToken) {
             const client = github.getOctokit(config.githubToken);
 
             await createRelease(client as any as Octokit, maxVersion, packageFilesToPublish);
-        });
-    } else {
-        core.warning('GitHub token not provided, not creating GitHub release page.');
-    }
+        } else {
+            core.warning('GitHub token not provided, not creating GitHub release page.');
+        }
+    });
 
     // publish to npm
-    if (config.npmToken) {
-        await core.group('Publish to NPM', async () => {
+    await core.group('Publish to NPM', async () => {
+        if (config.npmToken) {
             await publish(config.npmToken, packageFilesToPublish);
-        });
-    } else {
-        core.warning('NPM token not provided, not publishing to npmjs.com.');
-    }
+        } else {
+            core.warning('NPM token not provided, not publishing to npmjs.com.');
+        }
+    });
 }
 
 run().catch(error => {

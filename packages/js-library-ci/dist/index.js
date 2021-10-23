@@ -2875,7 +2875,7 @@ function run() {
         // build packages if lerna.json exists
         // packages may have dependencies on one another and cause lint/test issues if dependencies aren't built first
         if (isLernaRepository) {
-            yield core.group('Build dependencies', () => __awaiter(this, void 0, void 0, function* () {
+            yield core.group('Building dependencies', () => __awaiter(this, void 0, void 0, function* () {
                 core.info('Lerna configuration found, configuring and building packages.');
                 yield exec.exec('node_modules/.bin/lerna bootstrap --ci');
                 yield (0, task_1.build)(packageContent);
