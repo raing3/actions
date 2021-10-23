@@ -7,7 +7,11 @@ type LernaLsResult = {
     location: string;
 }[];
 
-export const getPackageVersions = async (packageContent: any, isLernaRepository: boolean): Promise<string[]> => {
+export type PackageVersions = {
+    [name: string]: string;
+};
+
+export const getPackageVersions = async (packageContent: any, isLernaRepository: boolean): Promise<PackageVersions> => {
     if (isLernaRepository) {
         let output = '';
 
@@ -21,11 +25,14 @@ export const getPackageVersions = async (packageContent: any, isLernaRepository:
         });
 
         const parsed: LernaLsResult = JSON.parse(output);
+        const versions: PackageVersions = {};
 
-        return [...new Set(parsed.map(item => `v${item.version}`))];
-    } else if (packageContent?.version) {
-        return [`v${packageContent.version}`];
+        parsed.forEach(item => {
+            versions[item.name] = `v${item.version}`;
+        });
+    } else if (packageContent?.name && packageContent?.version) {
+        return { [packageContent.name]: `v${packageContent.version}` };
     }
 
-    return [];
+    return {};
 };

@@ -6,10 +6,9 @@ import { isReleased } from '../util';
 import { Octokit } from '@octokit/rest';
 
 export const createRelease = async (client: Octokit, version: string): Promise<void> => {
-    const tag = `v${version}`;
     let output = '';
 
-    if (await isReleased(client, tag)) {
+    if (await isReleased(client, version)) {
         core.info(`GitHub release for version ${version} already exists, skipping creation.`);
         return;
     }
@@ -29,8 +28,8 @@ export const createRelease = async (client: Octokit, version: string): Promise<v
     const release = await client.rest.repos.createRelease({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
-        tag_name: tag, // eslint-disable-line @typescript-eslint/naming-convention
-        name: `Release ${tag}`
+        tag_name: version, // eslint-disable-line @typescript-eslint/naming-convention
+        name: `Release ${version}`
     });
 
     await client.rest.repos.uploadReleaseAsset({

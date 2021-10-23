@@ -2,7 +2,13 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 import { createRelease, publish } from './task';
-import { getPackageVersions, headHasVersionTag, isPublished } from './util';
+import {
+    getMaxVersion,
+    getNonPublishedPackages,
+    getPackageVersions,
+    getUniqueVersions,
+    headHasVersionTag
+} from './util';
 import fs from 'fs';
 import { Octokit } from '@octokit/rest';
 
@@ -17,19 +23,19 @@ const config = {
 async function run(): Promise<void> {
     process.env.CI = 'true'; // eslint-disable-line id-length
 
+    const versions = await getPackageVersions(packageContent, isLernaRepository);
+    const maxVersion = getMaxVersion(Object.values(versions));
+    const uniqueVersions = getUniqueVersions(Object.values(versions));
     const isViableForRelease = await core.group('Check if commit is viable for release', async () => {
         // don't publish on failure or if commit hasn't been tagged
-        if (!await headHasVersionTag(await getPackageVersions(packageContent, isLernaRepository))) {
+        if (!await headHasVersionTag(uniqueVersions)) {
             return false;
         }
 
         // don't publish if version already published
-        if (await isPublished(packageContent.version)) {
-            core.info(`Version ${packageContent.version} has already been published, not publishing.`);
-            return false;
-        }
+        const nonPublishedPackages = await getNonPublishedPackages(versions);
 
-        return true;
+        return nonPublishedPackages.length > 0;
     });
 
     if (!isViableForRelease) {
@@ -50,7 +56,7 @@ async function run(): Promise<void> {
         await core.group('Create GitHub release', async () => {
             const client = github.getOctokit(config.githubToken);
 
-            await createRelease(client as any as Octokit, packageContent.version);
+            await createRelease(client as any as Octokit, maxVersion);
         });
     } else {
         core.warning('GitHub token not provided, not creating GitHub release page.');

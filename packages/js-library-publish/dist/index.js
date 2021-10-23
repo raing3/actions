@@ -12390,6 +12390,26 @@ function onceStrict (fn) {
 
 /***/ }),
 
+/***/ 2568:
+/***/ ((module) => {
+
+module.exports = function cmp (a, b) {
+    var pa = a.split('.');
+    var pb = b.split('.');
+    for (var i = 0; i < 3; i++) {
+        var na = Number(pa[i]);
+        var nb = Number(pb[i]);
+        if (na > nb) return 1;
+        if (nb > na) return -1;
+        if (!isNaN(na) && isNaN(nb)) return 1;
+        if (isNaN(na) && !isNaN(nb)) return -1;
+    }
+    return 0;
+};
+
+
+/***/ }),
+
 /***/ 4294:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -12789,17 +12809,17 @@ const config = {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         process.env.CI = 'true'; // eslint-disable-line id-length
+        const versions = yield (0, util_1.getPackageVersions)(packageContent, isLernaRepository);
+        const maxVersion = (0, util_1.getMaxVersion)(Object.values(versions));
+        const uniqueVersions = (0, util_1.getUniqueVersions)(Object.values(versions));
         const isViableForRelease = yield core.group('Check if commit is viable for release', () => __awaiter(this, void 0, void 0, function* () {
             // don't publish on failure or if commit hasn't been tagged
-            if (!(yield (0, util_1.headHasVersionTag)(yield (0, util_1.getPackageVersions)(packageContent, isLernaRepository)))) {
+            if (!(yield (0, util_1.headHasVersionTag)(uniqueVersions))) {
                 return false;
             }
             // don't publish if version already published
-            if (yield (0, util_1.isPublished)(packageContent.version)) {
-                core.info(`Version ${packageContent.version} has already been published, not publishing.`);
-                return false;
-            }
-            return true;
+            const nonPublishedPackages = yield (0, util_1.getNonPublishedPackages)(versions);
+            return nonPublishedPackages.length > 0;
         }));
         if (!isViableForRelease) {
             core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
@@ -12814,7 +12834,7 @@ function run() {
         if (config.githubToken) {
             yield core.group('Create GitHub release', () => __awaiter(this, void 0, void 0, function* () {
                 const client = github.getOctokit(config.githubToken);
-                yield (0, task_1.createRelease)(client, packageContent.version);
+                yield (0, task_1.createRelease)(client, maxVersion);
             }));
         }
         else {
@@ -12882,9 +12902,8 @@ const github = __importStar(__nccwpck_require__(5438));
 const fs_1 = __importDefault(__nccwpck_require__(5747));
 const util_1 = __nccwpck_require__(9604);
 const createRelease = (client, version) => __awaiter(void 0, void 0, void 0, function* () {
-    const tag = `v${version}`;
     let output = '';
-    if (yield (0, util_1.isReleased)(client, tag)) {
+    if (yield (0, util_1.isReleased)(client, version)) {
         core.info(`GitHub release for version ${version} already exists, skipping creation.`);
         return;
     }
@@ -12900,8 +12919,8 @@ const createRelease = (client, version) => __awaiter(void 0, void 0, void 0, fun
     const release = yield client.rest.repos.createRelease({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
-        tag_name: tag,
-        name: `Release ${tag}`
+        tag_name: version,
+        name: `Release ${version}`
     });
     yield client.rest.repos.uploadReleaseAsset({
         owner: github.context.repo.owner,
@@ -12992,6 +13011,119 @@ exports.publish = publish;
 
 /***/ }),
 
+/***/ 3345:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getMaxVersion = void 0;
+const semver_compare_1 = __importDefault(__nccwpck_require__(2568));
+const getMaxVersion = (versions) => {
+    if (versions.length === 0) {
+        throw new Error('No versions have been provided.');
+    }
+    const sorted = versions.sort(semver_compare_1.default);
+    return sorted[sorted.length - 1];
+};
+exports.getMaxVersion = getMaxVersion;
+
+
+/***/ }),
+
+/***/ 4116:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getNonPublishedPackages = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
+const getNonPublishedPackages = (versions) => __awaiter(void 0, void 0, void 0, function* () {
+    const nonPublishedPackaged = [];
+    const publishedPackages = [];
+    const promises = Object.entries(versions).map(([packageName, version]) => __awaiter(void 0, void 0, void 0, function* () {
+        let output = '';
+        let errorOutput = '';
+        try {
+            // check if current commit is tagged with the same version in the package.json
+            yield exec.exec(`npm view ${packageName} versions --json`, [], {
+                silent: true,
+                listeners: {
+                    stdout: (data) => {
+                        output += data.toString();
+                    },
+                    stderr: (data) => {
+                        errorOutput += data.toString();
+                    }
+                }
+            });
+            const isPublished = output.indexOf(`"${version}"`) >= 0;
+            if (isPublished) {
+                publishedPackages.push(packageName);
+            }
+            else {
+                nonPublishedPackaged.push(packageName);
+            }
+        }
+        catch (error) {
+            if (errorOutput.indexOf('E404') >= 0) {
+                core.info(`${packageName} has never been published.`);
+                nonPublishedPackaged.push(packageName);
+                return;
+            }
+            if (errorOutput) {
+                throw new Error(errorOutput);
+            }
+            throw error;
+        }
+    }));
+    yield Promise.all(promises);
+    if (publishedPackages.length > 0) {
+        core.info(`The following packages have already been publish: ${publishedPackages.join(', ')}`);
+    }
+    if (nonPublishedPackaged.length > 0) {
+        core.info(`The following packages have not yet been publish: ${nonPublishedPackaged.join(', ')}`);
+    }
+    return nonPublishedPackaged;
+});
+exports.getNonPublishedPackages = getNonPublishedPackages;
+
+
+/***/ }),
+
 /***/ 5854:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -13040,14 +13172,32 @@ const getPackageVersions = (packageContent, isLernaRepository) => __awaiter(void
             }
         });
         const parsed = JSON.parse(output);
-        return [...new Set(parsed.map(item => `v${item.version}`))];
+        const versions = {};
+        parsed.forEach(item => {
+            versions[item.name] = `v${item.version}`;
+        });
     }
-    else if (packageContent === null || packageContent === void 0 ? void 0 : packageContent.version) {
-        return [`v${packageContent.version}`];
+    else if ((packageContent === null || packageContent === void 0 ? void 0 : packageContent.name) && (packageContent === null || packageContent === void 0 ? void 0 : packageContent.version)) {
+        return { [packageContent.name]: `v${packageContent.version}` };
     }
-    return [];
+    return {};
 });
 exports.getPackageVersions = getPackageVersions;
+
+
+/***/ }),
+
+/***/ 2258:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getUniqueVersions = void 0;
+const getUniqueVersions = (versions) => {
+    return [...new Set(versions)];
+};
+exports.getUniqueVersions = getUniqueVersions;
 
 
 /***/ }),
@@ -13097,6 +13247,7 @@ const headHasVersionTag = (versions) => __awaiter(void 0, void 0, void 0, functi
     let output = '';
     // check if current commit is tagged with the same version in the package.json
     yield exec.exec('git tag -l --points-at HEAD', [], {
+        silent: true,
         listeners: {
             stdout: (data) => {
                 output += data.toString();
@@ -13136,82 +13287,12 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(3345), exports);
 __exportStar(__nccwpck_require__(5854), exports);
+__exportStar(__nccwpck_require__(2258), exports);
 __exportStar(__nccwpck_require__(4275), exports);
-__exportStar(__nccwpck_require__(997), exports);
+__exportStar(__nccwpck_require__(4116), exports);
 __exportStar(__nccwpck_require__(3765), exports);
-
-
-/***/ }),
-
-/***/ 997:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isPublished = void 0;
-const core = __importStar(__nccwpck_require__(2186));
-const exec = __importStar(__nccwpck_require__(1514));
-const isPublished = (version) => __awaiter(void 0, void 0, void 0, function* () {
-    let output = '';
-    let errorOutput = '';
-    try {
-        // check if current commit is tagged with the same version in the package.json
-        yield exec.exec('npm show . versions --json', [], {
-            listeners: {
-                stdout: (data) => {
-                    output += data.toString();
-                },
-                stderr: (data) => {
-                    errorOutput += data.toString();
-                }
-            }
-        });
-        const result = output.indexOf(`"${version}"`) >= 0;
-        core.info(`Checking if version has already been published: ${version}, result: ${result}`);
-        return result;
-    }
-    catch (error) {
-        if (errorOutput.indexOf('E404') >= 0) {
-            core.info('This package has never been published.');
-            return false;
-        }
-        if (errorOutput) {
-            throw new Error(errorOutput);
-        }
-        throw error;
-    }
-});
-exports.isPublished = isPublished;
 
 
 /***/ }),

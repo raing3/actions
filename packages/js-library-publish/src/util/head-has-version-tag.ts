@@ -11,6 +11,7 @@ export const headHasVersionTag = async (versions: string[]): Promise<boolean> =>
 
     // check if current commit is tagged with the same version in the package.json
     await exec.exec('git tag -l --points-at HEAD', [], {
+        silent: true,
         listeners: {
             stdout: (data: Buffer): void => {
                 output += data.toString();
