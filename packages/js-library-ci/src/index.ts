@@ -15,7 +15,7 @@ async function run(): Promise<void> {
 
     // build packages if lerna.json exists
     // packages may have dependencies on one another and cause lint/test issues if dependencies aren't built first
-    if (fs.existsSync('learn.json')) {
+    if (fs.existsSync('./lerna.json')) {
         await core.group('Build dependencies', async () => {
             core.info('Lerna configuration found, configuration and building packages.');
             await exec.exec('node_modules/.bin/lerna bootstrap --ci');
