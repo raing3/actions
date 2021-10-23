@@ -1,6 +1,12 @@
 name: CI
 
-on: [push, workflow_dispatch]
+on:
+  push: ~
+  workflow_dispatch: ~
+  workflow_call:
+    secrets:
+      NPM_TOKEN:
+        required: true
 
 jobs:
   build:
