@@ -51,15 +51,23 @@ async function run(): Promise<void> {
         await exec.exec('npm ci');
     });
 
-    // build packages
-    const packageFiles = await Promise.all(packagesToPublish.map(item => createPackageTarball(item.location)));
+    // build all packages, there may be dependencies on packages which aren't being published
+    const packageFilesToPublish: string[] = [];
+
+    await Promise.all(packages.map(async item => {
+        const packageFile = await createPackageTarball(item.location);
+
+        if (packagesToPublish.indexOf(item)) {
+            packageFilesToPublish.push(packageFile);
+        }
+    }));
 
     // create github release
     if (config.githubToken) {
         await core.group('Create GitHub release', async () => {
             const client = github.getOctokit(config.githubToken);
 
-            await createRelease(client as any as Octokit, maxVersion, packageFiles);
+            await createRelease(client as any as Octokit, maxVersion, packageFilesToPublish);
         });
     } else {
         core.warning('GitHub token not provided, not creating GitHub release page.');
@@ -68,7 +76,7 @@ async function run(): Promise<void> {
     // publish to npm
     if (config.npmToken) {
         await core.group('Publish to NPM', async () => {
-            await publish(config.npmToken, packageFiles);
+            await publish(config.npmToken, packageFilesToPublish);
         });
     } else {
         core.warning('NPM token not provided, not publishing to npmjs.com.');

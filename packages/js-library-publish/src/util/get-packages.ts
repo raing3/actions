@@ -13,7 +13,7 @@ export const getPackages = async (packageContent: any, isLernaRepository: boolea
         let output = '';
 
         // check if current commit is tagged with the same version in the package.json
-        await exec.exec('lerna ls --json', [], {
+        await exec.exec('lerna ls --toposort --json', [], {
             silent: true,
             listeners: {
                 stdout: (data: Buffer): void => {

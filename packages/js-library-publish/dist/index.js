@@ -12830,13 +12830,19 @@ function run() {
         yield core.group('Installing dependencies', () => __awaiter(this, void 0, void 0, function* () {
             yield exec.exec('npm ci');
         }));
-        // build packages
-        const packageFiles = yield Promise.all(packagesToPublish.map(item => (0, create_package_tarball_1.createPackageTarball)(item.location)));
+        // build all packages, there may be dependencies on packages which aren't being published
+        const packageFilesToPublish = [];
+        yield Promise.all(packages.map((item) => __awaiter(this, void 0, void 0, function* () {
+            const packageFile = yield (0, create_package_tarball_1.createPackageTarball)(item.location);
+            if (packagesToPublish.indexOf(item)) {
+                packageFilesToPublish.push(packageFile);
+            }
+        })));
         // create github release
         if (config.githubToken) {
             yield core.group('Create GitHub release', () => __awaiter(this, void 0, void 0, function* () {
                 const client = github.getOctokit(config.githubToken);
-                yield (0, task_1.createRelease)(client, maxVersion, packageFiles);
+                yield (0, task_1.createRelease)(client, maxVersion, packageFilesToPublish);
             }));
         }
         else {
@@ -12845,7 +12851,7 @@ function run() {
         // publish to npm
         if (config.npmToken) {
             yield core.group('Publish to NPM', () => __awaiter(this, void 0, void 0, function* () {
-                yield (0, task_1.publish)(config.npmToken, packageFiles);
+                yield (0, task_1.publish)(config.npmToken, packageFilesToPublish);
             }));
         }
         else {
@@ -13225,7 +13231,7 @@ const getPackages = (packageContent, isLernaRepository) => __awaiter(void 0, voi
     if (isLernaRepository) {
         let output = '';
         // check if current commit is tagged with the same version in the package.json
-        yield exec.exec('lerna ls --json', [], {
+        yield exec.exec('lerna ls --toposort --json', [], {
             silent: true,
             listeners: {
                 stdout: (data) => {
