@@ -7,25 +7,22 @@ import { Octokit } from '@octokit/rest';
 
 export const createRelease = async (client: Octokit, version: string): Promise<void> => {
     const tag = `v${version}`;
-    // let output = '';
-    //
-    // if (await isReleased(client, tag)) {
-    //     core.info(`GitHub release for version ${version} already exists, skipping creation.`);
-    //     return;
-    // }
-    //
-    // await exec.exec('npm pack', [], {
-    //     listeners: {
-    //         stdout: (data: Buffer): void => {
-    //             output += data.toString();
-    //         }
-    //     }
-    // });
-    //
-    // const fileName = output.trim();
+    let output = '';
 
-    console.log(client);
-    console.log(client.repos);
+    if (await isReleased(client, tag)) {
+        core.info(`GitHub release for version ${version} already exists, skipping creation.`);
+        return;
+    }
+
+    await exec.exec('npm pack', [], {
+        listeners: {
+            stdout: (data: Buffer): void => {
+                output += data.toString();
+            }
+        }
+    });
+
+    const fileName = output.trim();
 
     const release = await client.repos.createRelease({
         owner: github.context.repo.owner,
@@ -34,11 +31,11 @@ export const createRelease = async (client: Octokit, version: string): Promise<v
         name: `Release ${tag}`
     });
 
-    // await client.repos.uploadReleaseAsset({
-    //     owner: github.context.repo.owner,
-    //     repo: github.context.repo.repo,
-    //     release_id: release.data.id, // eslint-disable-line @typescript-eslint/naming-convention
-    //     name: fileName,
-    //     data: fs.readFileSync(fileName).toString('utf8')
-    // });
+    await client.repos.uploadReleaseAsset({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        release_id: release.data.id, // eslint-disable-line @typescript-eslint/naming-convention
+        name: fileName,
+        data: fs.readFileSync(fileName).toString('utf8')
+    });
 };
