@@ -63,7 +63,7 @@ async function run(): Promise<void> {
         for (const item of packages) {
             const packageFile = await createPackageTarball(item.location);
 
-            if (packagesToPublish.indexOf(item)) {
+            if (packagesToPublish.indexOf(item) >= 0) {
                 packageFilesToPublish.push(packageFile);
             }
         }

@@ -12838,7 +12838,7 @@ function run() {
         yield core.group('Building packages', () => __awaiter(this, void 0, void 0, function* () {
             for (const item of packages) {
                 const packageFile = yield (0, create_package_tarball_1.createPackageTarball)(item.location);
-                if (packagesToPublish.indexOf(item)) {
+                if (packagesToPublish.indexOf(item) >= 0) {
                     packageFilesToPublish.push(packageFile);
                 }
             }
