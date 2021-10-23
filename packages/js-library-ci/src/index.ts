@@ -4,6 +4,7 @@ import { build, lint, test } from './task';
 import fs from 'fs';
 
 const packageContent = JSON.parse(fs.readFileSync('./package.json').toString());
+const isLernaRepository = packageContent.dependencies.lerna || packageContent.devDependencies.lerna;
 
 async function run(): Promise<void> {
     process.env.CI = 'true'; // eslint-disable-line id-length
@@ -15,9 +16,9 @@ async function run(): Promise<void> {
 
     // build packages if lerna.json exists
     // packages may have dependencies on one another and cause lint/test issues if dependencies aren't built first
-    if (fs.existsSync('./lerna.json')) {
+    if (isLernaRepository) {
         await core.group('Build dependencies', async () => {
-            core.info('Lerna configuration found, configuration and building packages.');
+            core.info('Lerna configuration found, configuring and building packages.');
             await exec.exec('node_modules/.bin/lerna bootstrap --ci');
             await build(packageContent);
         });
