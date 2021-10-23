@@ -12810,7 +12810,7 @@ const config = {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         process.env.CI = 'true'; // eslint-disable-line id-length
-        const packages = (yield (0, util_1.getPackages)(packageContent, isLernaRepository));
+        const packages = yield (0, util_1.getPackages)(packageContent, isLernaRepository);
         const uniqueVersions = (0, util_1.getUniqueVersions)(packages);
         const packagesToPublish = yield core.group('Check if commit is viable for release', () => __awaiter(this, void 0, void 0, function* () {
             // don't publish on failure or if commit hasn't been tagged
@@ -12818,7 +12818,7 @@ function run() {
                 return [];
             }
             // don't publish if version already published
-            return yield (0, util_1.getPackagesToPublish)(packages);
+            return (0, util_1.getPackagesToPublish)(packages);
         }));
         if (packagesToPublish.length <= 0) {
             core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
@@ -13083,7 +13083,7 @@ exports.getMaxVersion = getMaxVersion;
 
 /***/ }),
 
-/***/ 487:
+/***/ 6487:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -13357,7 +13357,7 @@ __exportStar(__nccwpck_require__(3345), exports);
 __exportStar(__nccwpck_require__(2501), exports);
 __exportStar(__nccwpck_require__(2258), exports);
 __exportStar(__nccwpck_require__(4275), exports);
-__exportStar(__nccwpck_require__(487), exports);
+__exportStar(__nccwpck_require__(6487), exports);
 __exportStar(__nccwpck_require__(3765), exports);
 
 

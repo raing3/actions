@@ -4,8 +4,8 @@ import * as github from '@actions/github';
 import { createRelease, publish } from './task';
 import {
     getMaxVersion,
-    getPackagesToPublish,
     getPackages,
+    getPackagesToPublish,
     getUniqueVersions,
     headHasVersionTag
 } from './util';
@@ -24,7 +24,7 @@ const config = {
 async function run(): Promise<void> {
     process.env.CI = 'true'; // eslint-disable-line id-length
 
-    const packages = (await getPackages(packageContent, isLernaRepository));
+    const packages = await getPackages(packageContent, isLernaRepository);
     const uniqueVersions = getUniqueVersions(packages);
     const packagesToPublish = await core.group('Check if commit is viable for release', async () => {
         // don't publish on failure or if commit hasn't been tagged
@@ -33,7 +33,7 @@ async function run(): Promise<void> {
         }
 
         // don't publish if version already published
-        return await getPackagesToPublish(packages);
+        return getPackagesToPublish(packages);
     });
 
     if (packagesToPublish.length <= 0) {
