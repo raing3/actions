@@ -22,15 +22,15 @@ export const headHasVersionTag = async (versions: string[]): Promise<boolean> =>
     const tags = output.split('\n').map(item => item.trim());
     const intersection = tags.filter(tag => versions.includes(tag));
 
-    core.info(`Head has the following tags: ${tags.join(', ')}`);
+    core.info(`Head has the following tags: ${tags.join(', ') || '(none)'}`);
 
     if (versions.length === 1) {
         core.info(`Package version is: ${versions.join(', ')}`);
     } else {
-        core.info(`Package versions are: ${versions.join(', ')}`);
+        core.info(`Package versions are: ${versions.join(', ') || '(none)'}`);
     }
 
-    core.info(`Intersection: ${intersection.join(', ')}, result: ${intersection.length > 0}`);
+    core.info(`Intersection: ${intersection.join(', ') || '(none)'}, result: ${intersection.length > 0}`);
 
     return intersection.length > 0;
 };

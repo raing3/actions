@@ -12813,17 +12813,16 @@ function run() {
         const packages = yield (0, util_1.getPackages)(packageContent, isLernaRepository);
         const uniqueVersions = (0, util_1.getUniqueVersions)(packages);
         const packagesToPublish = yield core.group('Check if commit is viable for release', () => __awaiter(this, void 0, void 0, function* () {
-            // don't publish on failure or if commit hasn't been tagged
-            if (!(yield (0, util_1.headHasVersionTag)(uniqueVersions))) {
-                return [];
+            // don't publish on failure or if commit hasn't been tagged or packages that are already published
+            if (yield (0, util_1.headHasVersionTag)(uniqueVersions)) {
+                const result = yield (0, util_1.getPackagesToPublish)(packages);
+                if (result.length > 0) {
+                    return result;
+                }
             }
-            // don't publish if version already published
-            const result = yield (0, util_1.getPackagesToPublish)(packages);
-            if (result.length <= 0) {
-                core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
-                    'and push the tag.');
-            }
-            return result;
+            core.info(`To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
+                'and push the tag.');
+            return [];
         }));
         if (packagesToPublish.length <= 0) {
             return;
@@ -13334,14 +13333,14 @@ const headHasVersionTag = (versions) => __awaiter(void 0, void 0, void 0, functi
     });
     const tags = output.split('\n').map(item => item.trim());
     const intersection = tags.filter(tag => versions.includes(tag));
-    core.info(`Head has the following tags: ${tags.join(', ')}`);
+    core.info(`Head has the following tags: ${tags.join(', ') || '(none)'}`);
     if (versions.length === 1) {
         core.info(`Package version is: ${versions.join(', ')}`);
     }
     else {
-        core.info(`Package versions are: ${versions.join(', ')}`);
+        core.info(`Package versions are: ${versions.join(', ') || '(none)'}`);
     }
-    core.info(`Intersection: ${intersection.join(', ')}, result: ${intersection.length > 0}`);
+    core.info(`Intersection: ${intersection.join(', ') || '(none)'}, result: ${intersection.length > 0}`);
     return intersection.length > 0;
 });
 exports.headHasVersionTag = headHasVersionTag;

@@ -27,22 +27,21 @@ async function run(): Promise<void> {
     const packages = await getPackages(packageContent, isLernaRepository);
     const uniqueVersions = getUniqueVersions(packages);
     const packagesToPublish = await core.group('Check if commit is viable for release', async () => {
-        // don't publish on failure or if commit hasn't been tagged
-        if (!await headHasVersionTag(uniqueVersions)) {
-            return [];
+        // don't publish on failure or if commit hasn't been tagged or packages that are already published
+        if (await headHasVersionTag(uniqueVersions)) {
+            const result = await getPackagesToPublish(packages);
+
+            if (result.length > 0) {
+                return result;
+            }
         }
 
-        // don't publish if version already published
-        const result = await getPackagesToPublish(packages);
+        core.info(
+            `To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
+            'and push the tag.'
+        );
 
-        if (result.length <= 0) {
-            core.info(
-                `To publish a new version run: ${isLernaRepository ? 'lerna' : 'npm'} version <patch|minor|major> ` +
-                'and push the tag.'
-            );
-        }
-
-        return result;
+        return [];
     });
 
     if (packagesToPublish.length <= 0) {
